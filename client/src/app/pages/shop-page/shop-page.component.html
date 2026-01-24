@@ -1,0 +1,45 @@
+<section class="boutique-section">
+    <div class="boutique-header">
+        <a routerLink="/" class="logo-link">
+            <img src="assets/logo_chat2.png" alt="Logo Fondation" class="logo-fondation" />
+        </a>
+        <div class="boutique-titre">
+            <h1>BOUTIQUE</h1>
+            <p>Découvrez et soutenez la fondation en achetant nos publications</p>
+        </div>
+    </div>
+
+    <div class="produit-container">
+        <div class="produit-image">
+            <img src="assets/book_cover.png" alt="Les récits de la forêt" />
+        </div>
+
+        <div class="produit-details">
+            <h2>Les Récits de la Forêt</h2>
+            <p class="auteur">Par François MEYE</p>
+            <p class="description">
+                Un ouvrage littéraire précieux issu du patrimoine gabonais mêlant récits, mémoire et transmission de valeurs éducatives. Cette œuvre
+                incarne l’engagement de François MEYE pour l’éducation et la culture.
+            </p>
+            <button class="btn-preface" (click)="openPreface()">Lire la préface</button>
+            <p class="prix">À partir de : <strong>8000 FCFA</strong></p>
+        </div>
+    </div>
+
+    <p class="contribution-text">Chaque exemplaire acheté contribue au financement des actions éducatives de la Fondation.</p>
+
+    <div class="btn-container">
+        <button class="btn-produit" routerLink="/produit">Voir le Produit</button>
+    </div>
+
+    <!-- Section des autres produits (s'affiche si au moins 2 produits) -->
+    <div *ngIf="products.length >= 2" class="autres-produits">
+        <h2>Tous les produits disponibles :</h2>
+        <div class="produits-liste">
+            <a *ngFor="let produit of products" class="produit-carte" [routerLink]="['/produit', produit._id]">
+                <app-cached-image *ngIf="produit.image" [src]="getProductImageUrl(produit.image)" [alt]="produit.title" class="product-image"></app-cached-image>
+                <p class="titre-produit">{{ produit.title }}</p>
+            </a>
+        </div>
+    </div>
+</section>

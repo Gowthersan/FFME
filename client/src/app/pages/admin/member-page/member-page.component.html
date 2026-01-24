@@ -1,0 +1,77 @@
+<app-admin-sidebar></app-admin-sidebar>
+<div class="with-sidebar">
+    <div class="d-flex min-vh-100">
+        <div class="main-content flex-grow-1 p-4">
+            <div *ngIf="errorMessage" class="alert alert-danger">
+                {{ errorMessage }}
+            </div>
+
+            <ng-container *ngIf="member as m; else loading">
+                <h2>Détails de l'adhésion</h2>
+                <hr />
+                <p><strong>Nom :</strong> {{ m.lastName }}</p>
+                <p><strong>Prénom :</strong> {{ m.firstName }}</p>
+                <p><strong>Email :</strong> {{ m.email }}</p>
+                <p><strong>Téléphone :</strong> {{ m.phone }}</p>
+                <p><strong>Montant payé :</strong> {{ m.amount }} FCFA</p>
+
+                <!-- Sélecteur du statut de paiement -->
+                <p>
+                    <strong>Statut : </strong>
+                    <select class="form-select d-inline w-auto" [(ngModel)]="m.paymentStatus" (change)="onStatusChange(m.paymentStatus)">
+                        <option *ngFor="let s of statuses" [value]="s.value">{{ s.label }}</option>
+                    </select>
+                </p>
+
+                <p><strong>Moyen de paiement :</strong> {{ m.paymentMethod }}</p>
+
+                <!-- Validation manuelle de l'adhésion -->
+                <p>
+                    <strong>Certifié : </strong>
+                    <span class="badge" [ngClass]="m.isValidated ? 'bg-success' : 'bg-secondary'">
+                        {{ m.isValidated ? 'Oui' : 'Non' }}
+                    </span>
+                    <button
+                        class="btn btn-sm ms-2"
+                        [ngClass]="m.isValidated ? 'btn-outline-danger' : 'btn-outline-success'"
+                        (click)="onValidateToggle()"
+                    >
+                        {{ m.isValidated ? 'Retirer la certif' : 'Valider l’adhésion' }}
+                    </button>
+                </p>
+
+                <div>
+                    <p><strong>Documents :</strong></p>
+                    <div class="d-flex flex-wrap gap-4" *ngIf="m.documents?.length">
+                        <div
+                            class="d-flex flex-column align-items-center border p-3 shadow-sm text-center"
+                            style="width: 200px; min-height: 220px; flex: 0 0 auto"
+                            *ngFor="let doc of m.documents"
+                        >
+                            <i [class]="getDocumentIconClass(doc.filename)" style="font-size: 48px" class="mb-2"></i>
+                            <strong class="text-center">{{ formatTitle(doc.title || '') }}</strong>
+                            <a
+                                class="text-center mt-1"
+                                style="word-break: break-word"
+                                href="javascript:void(0)"
+                                (click)="previewBase64(doc.base64, doc.filename)"
+                            >
+                                {{ doc.filename.length > 30 ? (doc.filename | slice: 0 : 27) + '...' : doc.filename }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <a routerLink="/admin/membres" class="btn btn-outline-primary mt-3">← Retour à la liste</a>
+            </ng-container>
+            <div *ngIf="previewUrl" class="mt-4">
+                <h5>Aperçu : {{ previewFilename }}</h5>
+                <iframe [src]="previewUrl | safeUrl" width="100%" height="600" style="border: 1px solid #ccc; border-radius: 8px"></iframe>
+            </div>
+
+            <ng-template #loading>
+                <p>Chargement des données...</p>
+            </ng-template>
+        </div>
+    </div>
+</div>

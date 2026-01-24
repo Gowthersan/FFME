@@ -1,0 +1,19 @@
+:host ::ng-deep .nav-link:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+:host {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 250px; // ou ajuste selon la maquette
+    height: 100vh;
+    background-color: #fff;
+    border-right: 1px solid #dee2e6;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}

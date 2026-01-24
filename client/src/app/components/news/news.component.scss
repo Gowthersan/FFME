@@ -1,0 +1,266 @@
+/* ===== SECTION ACTUALITÉS PROFESSIONNELLE ===== */
+
+.actualites-home {
+    text-align: center;
+    padding: var(--space-2xl) var(--space-md);
+    background-color: var(--blanc);
+
+    h2 {
+        font-family: var(--font-primary);
+        font-size: clamp(var(--text-3xl), 4vw, var(--text-5xl));
+        font-weight: 600;
+        color: var(--bleu);
+        margin-bottom: var(--space-xl);
+        letter-spacing: -0.02em;
+        position: relative;
+
+        &::after {
+            content: '';
+            display: block;
+            width: 80px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--jaune) 0%, var(--or) 100%);
+            margin: var(--space-md) auto 0;
+            border-radius: 2px;
+        }
+    }
+
+    .carousel {
+        position: relative;
+        overflow: hidden;
+        max-width: 1000px;
+        margin: 0 auto;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .slides {
+        display: flex;
+        transition: transform 0.6s ease-in-out;
+    }
+
+    .slide {
+        min-width: 100%;
+        position: relative;
+        cursor: pointer;
+
+        .slide-image {
+            width: 100%;
+            height: 400px;
+            background-size: cover;
+            background-position: center;
+            transition: transform var(--transition-slow);
+        }
+
+        &:hover .slide-image {
+            transform: scale(1.05);
+        }
+
+        .slide-content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: var(--space-lg);
+            background: linear-gradient(
+                180deg,
+                rgba(0, 0, 0, 0) 0%,
+                rgba(0, 0, 0, 0.85) 100%
+            );
+            color: var(--blanc);
+            text-align: left;
+
+            .date {
+                font-family: var(--font-primary);
+                font-size: var(--text-sm);
+                font-weight: 500;
+                color: var(--jaune);
+                margin-bottom: var(--space-xs);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .title {
+                font-family: var(--font-primary);
+                font-size: clamp(var(--text-lg), 2vw, var(--text-2xl));
+                font-weight: 600;
+                margin-bottom: var(--space-sm);
+                line-height: 1.3;
+            }
+
+            .read-article-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--space-xs);
+                margin-top: var(--space-sm);
+                padding: var(--space-sm) var(--space-md);
+                background: linear-gradient(135deg, var(--jaune) 0%, var(--or) 100%);
+                color: var(--bleu-fonce);
+                text-decoration: none;
+                border-radius: var(--radius-md);
+                font-family: var(--font-primary);
+                font-size: var(--text-sm);
+                font-weight: 600;
+                transition: all var(--transition-normal);
+                box-shadow: var(--shadow-sm);
+
+                &:hover {
+                    background: linear-gradient(135deg, var(--or) 0%, #B8860B 100%);
+                    transform: translateY(-2px);
+                    box-shadow: var(--shadow-md);
+                }
+
+                svg {
+                    vertical-align: middle;
+                    transition: transform var(--transition-fast);
+                }
+
+                &:hover svg {
+                    transform: translateX(3px);
+                }
+            }
+        }
+    }
+
+    /* Boutons de navigation */
+    .prev,
+    .next {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 48px;
+        height: 48px;
+        font-size: var(--text-2xl);
+        background: rgba(255, 255, 255, 0.9);
+        border: none;
+        border-radius: var(--radius-full);
+        color: var(--bleu);
+        cursor: pointer;
+        z-index: 1;
+        transition: all var(--transition-normal);
+        box-shadow: var(--shadow-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+            background: var(--blanc);
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+    }
+
+    .prev {
+        left: var(--space-md);
+    }
+
+    .next {
+        right: var(--space-md);
+    }
+
+    /* Indicateurs (dots) */
+    .dots {
+        display: flex;
+        justify-content: center;
+        gap: var(--space-xs);
+        margin-top: var(--space-md);
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            background: var(--bleu-clair-clair);
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all var(--transition-normal);
+
+            &:hover {
+                background: var(--bleu-clair);
+            }
+
+            &.active {
+                background: var(--bleu);
+                width: 32px;
+            }
+        }
+    }
+}
+
+/* Lien "Voir toutes les actualités" */
+.view-all-news {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-xs);
+    margin-top: var(--space-lg);
+    font-family: var(--font-primary);
+    font-size: var(--text-base);
+    font-weight: 600;
+    color: var(--bleu);
+    cursor: pointer;
+    transition: all var(--transition-normal);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-md);
+
+    .arrow svg {
+        vertical-align: middle;
+        transition: transform var(--transition-fast);
+    }
+
+    &:hover {
+        color: var(--bleu-fonce);
+        background: var(--bleu-clair-clair);
+
+        .arrow svg {
+            transform: translateX(6px);
+        }
+    }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .actualites-home {
+        padding: var(--space-xl) var(--space-sm);
+
+        h2 {
+            font-size: var(--text-3xl);
+        }
+
+        .carousel {
+            border-radius: var(--radius-md);
+        }
+
+        .slide {
+            .slide-image {
+                height: 300px;
+            }
+
+            .slide-content {
+                padding: var(--space-md);
+
+                .title {
+                    font-size: var(--text-base);
+                }
+            }
+        }
+
+        .prev,
+        .next {
+            width: 40px;
+            height: 40px;
+            font-size: var(--text-lg);
+        }
+
+        .prev {
+            left: var(--space-sm);
+        }
+
+        .next {
+            right: var(--space-sm);
+        }
+    }
+
+    .view-all-news {
+        justify-content: center;
+        margin-right: 0;
+    }
+}

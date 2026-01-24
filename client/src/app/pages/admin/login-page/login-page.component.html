@@ -1,0 +1,33 @@
+<div class="login-wrapper">
+    <div class="login-card">
+        <img src="/assets/logo.png" alt="Logo Fondation" class="logo" />
+        <h2 class="text-center mb-1">Bienvenue</h2>
+        <p class="text-center text-muted mb-4">Accédez à l'espace d'administration</p>
+
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+            <div *ngIf="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
+
+            <div class="mb-3">
+                <label for="email" class="form-label">Adresse Email</label>
+                <input type="email" class="form-control" id="email" formControlName="email" required />
+                <div *ngIf="form.get('email')?.touched && form.get('email')?.invalid" class="text-danger mt-1">
+                    <div *ngIf="form.get('email')?.errors?.['required']">L’adresse email est requise.</div>
+                    <div *ngIf="form.get('email')?.errors?.['email']">L’adresse email n’est pas valide.</div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label for="password" class="form-label">Mot de passe</label>
+                <input type="password" class="form-control" id="password" formControlName="password" required />
+                <div *ngIf="form.get('password')?.touched && form.get('password')?.invalid" class="text-danger mt-1">
+                    <div *ngIf="form.get('password')?.errors?.['required']">Le mot de passe est requis.</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" [disabled]="isLoading || form.invalid">
+                <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                {{ isLoading ? 'Connexion en cours...' : 'Se connecter' }}
+            </button>
+        </form>
+    </div>
+</div>

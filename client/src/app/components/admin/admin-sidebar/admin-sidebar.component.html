@@ -1,0 +1,12 @@
+<nav class="bg-light sidebar p-3 border-end min-vh-100" style="width: 250px; height: 100vh">
+    <img src="/assets/logo.png" class="img-fluid mb-3" alt="Logo" />
+    <ul class="nav flex-column">
+        <li class="nav-item"><a class="nav-link" routerLink="/admin/dashboard">Accueil / Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" routerLink="/admin/dons">Gestion des dons</a></li>
+        <li class="nav-item"><a class="nav-link" routerLink="/admin/news">Gestion des actualités</a></li>
+        <li class="nav-item"><a class="nav-link" routerLink="/admin/produits">Gestion des produits</a></li>
+        <li class="nav-item"><a class="nav-link" routerLink="/admin/membres">Gestion des membres</a></li>
+        <li class="nav-item"><a class="nav-link" routerLink="/admin/galerie">Gestion de la galerie</a></li>
+        <li class="nav-item"><a class="nav-link text-danger" (click)="logout()">Déconnexion</a></li>
+    </ul>
+</nav>

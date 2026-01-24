@@ -1,0 +1,48 @@
+<app-admin-sidebar></app-admin-sidebar>
+<div class="with-sidebar">
+    <div class="d-flex min-vh-100 overflow-hidden">
+        <!-- Contenu principal -->
+        <div class="main-content flex-grow-1 d-flex flex-column">
+            <!-- Titre figé -->
+            <div class="sticky-header bg-white border-bottom p-3">
+                <h2 class="m-0">Gestion des membres</h2>
+            </div>
+
+            <!-- Zone scrollable -->
+            <div class="scrollable-table px-4 py-3">
+                <table class="table table-bordered">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>Prénom</th>
+                            <th>Nom</th>
+                            <th>Email</th>
+                            <th>Statut de paiement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let member of members" (click)="goToMember(member.idMember)" class="clickable-row">
+                            <td>
+                                <i *ngIf="member.isValidated" class="bi bi-patch-check-fill text-success ms-1" title="Adhésion certifiée"></i>
+                                {{ member.firstName }}
+                            </td>
+                            <td>{{ member.lastName }}</td>
+                            <td>{{ member.email }}</td>
+                            <td>
+                                <span
+                                    class="badge"
+                                    [ngClass]="{
+                                        'bg-success': member.paymentStatus === PaymentStatus.COMPLETED,
+                                        'bg-warning text-dark': member.paymentStatus === PaymentStatus.PENDING,
+                                        'bg-danger': member.paymentStatus === PaymentStatus.FAILURE
+                                    }"
+                                >
+                                    {{ member.paymentStatus }}
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
