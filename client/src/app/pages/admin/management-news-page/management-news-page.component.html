@@ -1,35 +1,78 @@
+<app-admin-sidebar></app-admin-sidebar>
 <app-loading-spinner [show]="isLoading"></app-loading-spinner>
-<app-admin-sidebar class="sidebar-fixed"></app-admin-sidebar>
-<div class="with-sidebar">
-    <div class="d-flex min-vh-100 overflow-hidden">
-        <div class="main-content flex-grow-1 d-flex flex-column w-100">
-            <div class="sticky-header bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
-                <h2 class="m-0">Gestion des Actualités</h2>
-                <button class="btn btn-sm btn-primary px-4" (click)="openForm()">Ajouter une actualité</button>
+
+<div class="admin-content">
+    <!-- Page Header -->
+    <header class="admin-page-header">
+        <div class="admin-page-header__left">
+            <h1 class="admin-page-header__title">Gestion des Actualites</h1>
+            <p class="admin-page-header__subtitle">Gerez et publiez vos actualites</p>
+        </div>
+        <div class="admin-page-header__right">
+            <button class="admin-btn admin-btn--primary" (click)="openForm()">
+                <i class="fas fa-plus"></i>
+                Nouvelle actualite
+            </button>
+        </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="news-stats">
+        <div class="stat-mini">
+            <div class="stat-mini__icon">
+                <i class="fas fa-newspaper"></i>
             </div>
-
-            <!-- Formulaire modal -->
-            <app-form-news
-                *ngIf="showModal"
-                [news]="newsToEdit"
-                [isEditMode]="isEditMode"
-                (submitted)="handleFormSubmit($event)"
-                (deleted)="handleNewsDelete($event)"
-                (closed)="closeForm()"
-            ></app-form-news>
-
-            <div class="news-list p-4">
-                <div class="news-item" *ngFor="let news of newsList" (click)="editNews(news)">
-                    <div class="news-image">
-                        <img [src]="getImageWithCache(news.image)" alt="Image de l’actualité" />
-                    </div>
-                    <div class="news-info">
-                        <h5 class="mb-1">{{ news.title }}</h5>
-                        <p class="small text-muted mb-1">{{ news.date | date: 'longDate' }}</p>
-                        <p class="text-truncate">{{ news.description }}</p>
-                    </div>
-                </div>
+            <div class="stat-mini__content">
+                <span class="stat-mini__value">{{ newsList.length }}</span>
+                <span class="stat-mini__label">Actualites</span>
             </div>
         </div>
     </div>
+
+    <!-- News Grid -->
+    <section class="news-section" *ngIf="newsList.length > 0">
+        <div class="news-grid">
+            <article class="news-card" *ngFor="let news of newsList" (click)="editNews(news)">
+                <div class="news-card__image">
+                    <img [src]="getImageWithCache(news.image)" [alt]="news.title" loading="lazy" />
+                    <div class="news-card__overlay">
+                        <button class="news-card__action" title="Modifier">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="news-card__content">
+                    <div class="news-card__date">
+                        <i class="fas fa-calendar-alt"></i>
+                        {{ news.date | date: 'dd MMMM yyyy' }}
+                    </div>
+                    <h3 class="news-card__title">{{ news.title }}</h3>
+                    <p class="news-card__description">{{ news.description }}</p>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="newsList.length === 0 && !isLoading">
+        <div class="empty-state__icon">
+            <i class="fas fa-newspaper"></i>
+        </div>
+        <h3 class="empty-state__title">Aucune actualite</h3>
+        <p class="empty-state__text">Commencez par ajouter votre premiere actualite</p>
+        <button class="admin-btn admin-btn--primary" (click)="openForm()">
+            <i class="fas fa-plus"></i>
+            Ajouter une actualite
+        </button>
+    </div>
 </div>
+
+<!-- Form Modal -->
+<app-form-news
+    *ngIf="showModal"
+    [news]="newsToEdit"
+    [isEditMode]="isEditMode"
+    (submitted)="handleFormSubmit($event)"
+    (deleted)="handleNewsDelete($event)"
+    (closed)="closeForm()"
+></app-form-news>

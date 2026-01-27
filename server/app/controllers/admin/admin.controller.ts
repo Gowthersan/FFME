@@ -7,6 +7,7 @@ import { MemberDatabaseService } from '@app/services/database/member/member.data
 import { MongoStorageService } from '@app/services/database/member/mongo-storage.service';
 import { NewsDatabaseFtpService } from '@app/services/database/news/news.database.ftp.service';
 import { ProductDatabaseService } from '@app/services/database/product/product.database.service';
+import { TransactionDatabaseService } from '@app/services/database/transaction/transaction.database.service';
 import { PaymentStatus } from '@common/enums/payment-status';
 import { Router } from 'express';
 import { Service } from 'typedi';
@@ -23,6 +24,7 @@ export class AdminController {
         private newsDbService: NewsDatabaseFtpService,
         private galleryDbService: GalleryDatabaseFtpService,
         private authService: AuthService,
+        private transactionDbService: TransactionDatabaseService,
     ) {
         this.router = Router();
         this.configureRoutes();
@@ -56,13 +58,15 @@ export class AdminController {
         // Endpoint stats pour le dashboard
         this.router.get('/stats', authenticateToken, async (_req, res) => {
             try {
-                const [donations, members, products, orders, news, photos] = await Promise.all([
+                const [donations, members, products, orders, news, photos, transactionStats, recentTransactions] = await Promise.all([
                     this.donationDatabaseService.getAll(),
                     this.memberDbService.getAll(),
                     this.productDbService.getAllProducts(),
                     this.productDbService.getAllOrders(),
                     this.newsDbService.getAll(),
                     this.galleryDbService.getAll(),
+                    this.transactionDbService.getStats(),
+                    this.transactionDbService.getRecentTransactions(10),
                 ]);
 
                 const stats = {
@@ -98,12 +102,85 @@ export class AdminController {
                             isPaid: o.isPaid,
                             date: o.date,
                         })),
+                    // Nouvelles stats de transactions Singpay
+                    transactions: {
+                        total: transactionStats.total,
+                        completed: transactionStats.byStatus.completed,
+                        pending: transactionStats.byStatus.pending + transactionStats.byStatus.initiated,
+                        failed: transactionStats.byStatus.failed + transactionStats.byStatus.timeout,
+                        conversionRate: transactionStats.conversionRate,
+                        totalAmount: transactionStats.totalAmount,
+                        completedAmount: transactionStats.completedAmount,
+                        byType: transactionStats.byType,
+                    },
+                    recentTransactions: recentTransactions.map((t) => ({
+                        id: t.id,
+                        type: t.type,
+                        amount: t.amount,
+                        status: t.status,
+                        payerName: `${t.payerFirstName} ${t.payerLastName}`,
+                        initiatedAt: t.initiatedAt,
+                        completedAt: t.completedAt,
+                    })),
                 };
 
                 return res.status(200).json(stats);
             } catch (err) {
                 console.error('Erreur récupération stats:', err);
                 return res.status(500).json({ message: 'Erreur lors de la récupération des statistiques' });
+            }
+        });
+
+        // Endpoint pour les données du graphique d'évolution temporelle
+        this.router.get('/stats/charts', authenticateToken, async (_req, res) => {
+            try {
+                const [donations, members] = await Promise.all([
+                    this.donationDatabaseService.getAll(),
+                    this.memberDbService.getAll(),
+                ]);
+
+                // Générer les 6 derniers mois
+                const months: string[] = [];
+                const now = new Date();
+                for (let i = 5; i >= 0; i--) {
+                    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    const monthNames = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc'];
+                    months.push(monthNames[date.getMonth()]);
+                }
+
+                // Compter les dons par mois
+                const donationsByMonth: number[] = [];
+                const membersByMonth: number[] = [];
+                const amountsByMonth: number[] = [];
+
+                for (let i = 5; i >= 0; i--) {
+                    const startDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                    const endDate = new Date(now.getFullYear(), now.getMonth() - i + 1, 0);
+
+                    const monthDonations = donations.filter((d) => {
+                        const date = new Date(d.registrationDate);
+                        return date >= startDate && date <= endDate;
+                    });
+
+                    const monthMembers = members.filter((m) => {
+                        const date = new Date(m.registrationDate);
+                        return date >= startDate && date <= endDate;
+                    });
+
+                    donationsByMonth.push(monthDonations.length);
+                    membersByMonth.push(monthMembers.length);
+                    amountsByMonth.push(monthDonations.reduce((sum, d) => sum + (d.amount || 0), 0));
+                }
+
+                return res.status(200).json({
+                    labels: months,
+                    donations: donationsByMonth,
+                    members: membersByMonth,
+                    amounts: amountsByMonth,
+                });
+            } catch (err) {
+                console.error('Erreur récupération stats charts:', err);
+                return res.status(500).json({ message: 'Erreur lors de la récupération des données du graphique' });
             }
         });
 

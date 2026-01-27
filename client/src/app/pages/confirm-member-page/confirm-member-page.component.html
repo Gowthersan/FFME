@@ -45,7 +45,10 @@
             <div class="option-content">
                 <strong>SING Pay – Solution numérique sécurisée</strong>
                 <p>Payez votre adhésion via SING Pay, le portefeuille électronique sécurisé de la SING. Paiement instantané, disponible 24h/24.</p>
-                <button class="singpay-btn" (click)="submitPayment(PaymentMethod.SING_PAY)" [disabled]="selectedOption !== 'singpay'">
+                <button
+                    class="singpay-btn"
+                    (click)="submitPayment(PaymentMethod.SING_PAY)"
+                    [disabled]="selectedOption !== 'singpay'">
                     PAYER AVEC SING PAY
                 </button>
             </div>

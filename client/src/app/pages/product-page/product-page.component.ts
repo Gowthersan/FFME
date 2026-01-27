@@ -86,7 +86,7 @@ export class ProductPageComponent implements OnInit {
     }
 
     get selectedPrice(): number {
-        return this.product.versions[this.selectedVersionIndex].price;
+        return this.product?.versions?.[this.selectedVersionIndex]?.price || 0;
     }
 
     addToCart(times: number = 1) {

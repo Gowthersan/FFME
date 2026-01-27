@@ -1,178 +1,203 @@
-<app-loading-spinner [show]="isLoading"></app-loading-spinner>
 <app-admin-sidebar></app-admin-sidebar>
-<div class="with-sidebar">
-    <div class="d-flex min-vh-100">
-        <div class="flex-grow-1 p-4">
-            <!-- Header -->
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="m-0">Tableau de bord</h2>
-                <button class="btn btn-outline-danger btn-sm" (click)="logout()">Se déconnecter</button>
+
+<div class="admin-content">
+    <!-- Header -->
+    <header class="admin-header">
+        <div class="admin-header__left">
+            <h1 class="admin-header__title">Tableau de bord</h1>
+            <p class="admin-header__subtitle">Vue d'ensemble de votre activité</p>
+        </div>
+        <div class="admin-header__right">
+            <button class="admin-btn admin-btn--outline" (click)="loadStats()">
+                <i class="fas fa-sync-alt" [class.fa-spin]="isLoading"></i>
+                Actualiser
+            </button>
+            <button class="admin-btn admin-btn--danger-outline" (click)="logout()">
+                <i class="fas fa-sign-out-alt"></i>
+                Déconnexion
+            </button>
+        </div>
+    </header>
+
+    <!-- Stats Cards -->
+    <section class="dashboard-stats">
+        <div class="stats-grid">
+            <app-stat-card
+                title="Dons"
+                [value]="stats?.donationsCount || 0"
+                [subtitle]="stats?.pendingDonationsCount ? stats?.pendingDonationsCount + ' en attente' : undefined"
+                icon="fas fa-hand-holding-heart"
+                variant="primary"
+                [loading]="isLoading"
+            ></app-stat-card>
+
+            <app-stat-card
+                title="Montant Total"
+                [value]="(stats?.totalDonationAmount || 0 | number) + ' FCFA'"
+                icon="fas fa-coins"
+                variant="success"
+                [loading]="isLoading"
+            ></app-stat-card>
+
+            <app-stat-card
+                title="Membres"
+                [value]="stats?.membersCount || 0"
+                [subtitle]="stats?.validatedMembersCount ? stats?.validatedMembersCount + ' certifiés' : undefined"
+                icon="fas fa-users"
+                variant="info"
+                [loading]="isLoading"
+            ></app-stat-card>
+
+            <app-stat-card
+                title="Commandes"
+                [value]="stats?.ordersCount || 0"
+                [subtitle]="stats?.pendingOrdersCount ? stats?.pendingOrdersCount + ' en attente' : undefined"
+                icon="fas fa-shopping-cart"
+                variant="warning"
+                [loading]="isLoading"
+            ></app-stat-card>
+        </div>
+    </section>
+
+    <!-- Chart Section -->
+    <section class="dashboard-chart">
+        <div class="chart-card">
+            <div class="chart-card__header">
+                <h3 class="chart-card__title">Évolution des activités</h3>
+                <span class="chart-card__subtitle">6 derniers mois</span>
+            </div>
+            <div class="chart-card__body">
+                <canvas #chartCanvas></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Secondary Stats -->
+    <section class="dashboard-secondary">
+        <div class="secondary-grid">
+            <div class="secondary-card">
+                <div class="secondary-card__icon secondary-card__icon--products">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="secondary-card__content">
+                    <span class="secondary-card__value">{{ stats?.productsCount || 0 }}</span>
+                    <span class="secondary-card__label">Produits</span>
+                </div>
             </div>
 
-            <!-- Statistiques principales -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-3">
-                    <div class="card text-white bg-primary h-100">
-                        <div class="card-body">
-                            <h6 class="card-title">Dons</h6>
-                            <p class="card-text fs-3 mb-0">{{ stats?.donationsCount || 0 }}</p>
-                            <small *ngIf="stats?.pendingDonationsCount">{{ stats?.pendingDonationsCount }} en attente</small>
-                        </div>
-                    </div>
+            <div class="secondary-card">
+                <div class="secondary-card__icon secondary-card__icon--news">
+                    <i class="fas fa-newspaper"></i>
                 </div>
-
-                <div class="col-md-3">
-                    <div class="card text-white bg-success h-100">
-                        <div class="card-body">
-                            <h6 class="card-title">Montant total</h6>
-                            <p class="card-text fs-3 mb-0">{{ stats?.totalDonationAmount | number }} FCFA</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-white bg-info h-100">
-                        <div class="card-body">
-                            <h6 class="card-title">Membres</h6>
-                            <p class="card-text fs-3 mb-0">{{ stats?.membersCount || 0 }}</p>
-                            <small *ngIf="stats?.validatedMembersCount">{{ stats?.validatedMembersCount }} certifiés</small>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="card text-white bg-warning h-100">
-                        <div class="card-body">
-                            <h6 class="card-title">Commandes</h6>
-                            <p class="card-text fs-3 mb-0">{{ stats?.ordersCount || 0 }}</p>
-                            <small *ngIf="stats?.pendingOrdersCount">{{ stats?.pendingOrdersCount }} en attente</small>
-                        </div>
-                    </div>
+                <div class="secondary-card__content">
+                    <span class="secondary-card__value">{{ stats?.newsCount || 0 }}</span>
+                    <span class="secondary-card__label">Actualités</span>
                 </div>
             </div>
 
-            <!-- Statistiques secondaires -->
-            <div class="row g-4 mb-4">
-                <div class="col-md-4">
-                    <div class="card border-secondary h-100">
-                        <div class="card-body">
-                            <h6 class="card-title text-muted">Produits</h6>
-                            <p class="card-text fs-4 mb-0">{{ stats?.productsCount || 0 }}</p>
-                        </div>
-                    </div>
+            <div class="secondary-card">
+                <div class="secondary-card__icon secondary-card__icon--gallery">
+                    <i class="fas fa-images"></i>
                 </div>
-
-                <div class="col-md-4">
-                    <div class="card border-secondary h-100">
-                        <div class="card-body">
-                            <h6 class="card-title text-muted">Actualités</h6>
-                            <p class="card-text fs-4 mb-0">{{ stats?.newsCount || 0 }}</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="card border-secondary h-100">
-                        <div class="card-body">
-                            <h6 class="card-title text-muted">Photos galerie</h6>
-                            <p class="card-text fs-4 mb-0">{{ stats?.photosCount || 0 }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tableaux des dernières activités -->
-            <div class="row g-4">
-                <!-- Derniers dons -->
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header bg-white">
-                            <h6 class="mb-0">Derniers dons</h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Donateur</th>
-                                            <th>Montant</th>
-                                            <th>Statut</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr
-                                            *ngFor="let don of stats?.recentDonations"
-                                            (click)="goToDonation(don.idDonation)"
-                                            style="cursor: pointer"
-                                        >
-                                            <td>{{ don.firstName }} {{ don.lastName }}</td>
-                                            <td>{{ don.amount | number }} FCFA</td>
-                                            <td>
-                                                <span
-                                                    class="badge"
-                                                    [ngClass]="{
-                                                        'bg-success': don.isPaid === 'COMPLETED',
-                                                        'bg-warning text-dark': don.isPaid === 'PENDING',
-                                                        'bg-danger': don.isPaid === 'FAILURE'
-                                                    }"
-                                                >
-                                                    {{ don.isPaid === 'COMPLETED' ? 'Payé' : don.isPaid === 'PENDING' ? 'En attente' : 'Échoué' }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <tr *ngIf="!stats?.recentDonations?.length">
-                                            <td colspan="3" class="text-center text-muted">Aucun don récent</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Dernières commandes -->
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-header bg-white">
-                            <h6 class="mb-0">Dernières commandes</h6>
-                        </div>
-                        <div class="card-body p-0">
-                            <div class="table-responsive">
-                                <table class="table table-hover mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Client</th>
-                                            <th>Date</th>
-                                            <th>Statut</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr *ngFor="let order of stats?.recentOrders" (click)="goToOrder(order._id)" style="cursor: pointer">
-                                            <td>{{ order.firstName }} {{ order.lastName }}</td>
-                                            <td>{{ order.date | date: 'shortDate' }}</td>
-                                            <td>
-                                                <span
-                                                    class="badge"
-                                                    [ngClass]="{
-                                                        'bg-success': order.isPaid === 'COMPLETED',
-                                                        'bg-warning text-dark': order.isPaid === 'PENDING',
-                                                        'bg-danger': order.isPaid === 'FAILURE'
-                                                    }"
-                                                >
-                                                    {{ order.isPaid === 'COMPLETED' ? 'Payé' : order.isPaid === 'PENDING' ? 'En attente' : 'Échoué' }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <tr *ngIf="!stats?.recentOrders?.length">
-                                            <td colspan="3" class="text-center text-muted">Aucune commande récente</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
+                <div class="secondary-card__content">
+                    <span class="secondary-card__value">{{ stats?.photosCount || 0 }}</span>
+                    <span class="secondary-card__label">Photos</span>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
+
+    <!-- Recent Activity Tables -->
+    <section class="dashboard-tables">
+        <div class="tables-grid">
+            <!-- Recent Donations -->
+            <div class="activity-card">
+                <div class="activity-card__header">
+                    <h3 class="activity-card__title">
+                        <i class="fas fa-hand-holding-heart"></i>
+                        Derniers dons
+                    </h3>
+                    <a class="activity-card__link" routerLink="/admin/dons">Voir tout</a>
+                </div>
+                <div class="activity-card__body">
+                    <div class="activity-list" *ngIf="stats?.recentDonations?.length; else noDonations">
+                        <div
+                            class="activity-item"
+                            *ngFor="let don of stats?.recentDonations"
+                            (click)="goToDonation(don.idDonation)"
+                        >
+                            <div class="activity-item__avatar">
+                                {{ don.firstName?.charAt(0) }}{{ don.lastName?.charAt(0) }}
+                            </div>
+                            <div class="activity-item__info">
+                                <span class="activity-item__name">{{ don.firstName }} {{ don.lastName }}</span>
+                                <span class="activity-item__date">{{ don.registrationDate | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <div class="activity-item__right">
+                                <span class="activity-item__amount">{{ don.amount | number }} F</span>
+                                <span
+                                    class="activity-item__status"
+                                    [class.activity-item__status--success]="don.isPaid === 'COMPLETED'"
+                                    [class.activity-item__status--warning]="don.isPaid === 'PENDING'"
+                                    [class.activity-item__status--danger]="don.isPaid === 'FAILURE'"
+                                >
+                                    {{ don.isPaid === 'COMPLETED' ? 'Payé' : don.isPaid === 'PENDING' ? 'En attente' : 'Échoué' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <ng-template #noDonations>
+                        <div class="activity-empty">
+                            <i class="fas fa-inbox"></i>
+                            <span>Aucun don récent</span>
+                        </div>
+                    </ng-template>
+                </div>
+            </div>
+
+            <!-- Recent Orders -->
+            <div class="activity-card">
+                <div class="activity-card__header">
+                    <h3 class="activity-card__title">
+                        <i class="fas fa-shopping-bag"></i>
+                        Dernières commandes
+                    </h3>
+                    <a class="activity-card__link" routerLink="/admin/produits">Voir tout</a>
+                </div>
+                <div class="activity-card__body">
+                    <div class="activity-list" *ngIf="stats?.recentOrders?.length; else noOrders">
+                        <div
+                            class="activity-item"
+                            *ngFor="let order of stats?.recentOrders"
+                            (click)="goToOrder(order._id)"
+                        >
+                            <div class="activity-item__avatar activity-item__avatar--order">
+                                {{ order.firstName?.charAt(0) }}{{ order.lastName?.charAt(0) }}
+                            </div>
+                            <div class="activity-item__info">
+                                <span class="activity-item__name">{{ order.firstName }} {{ order.lastName }}</span>
+                                <span class="activity-item__date">{{ order.date | date:'dd/MM/yyyy HH:mm' }}</span>
+                            </div>
+                            <div class="activity-item__right">
+                                <span
+                                    class="activity-item__status"
+                                    [class.activity-item__status--success]="order.isPaid === 'COMPLETED'"
+                                    [class.activity-item__status--warning]="order.isPaid === 'PENDING'"
+                                    [class.activity-item__status--danger]="order.isPaid === 'FAILURE'"
+                                >
+                                    {{ order.isPaid === 'COMPLETED' ? 'Payé' : order.isPaid === 'PENDING' ? 'En attente' : 'Échoué' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <ng-template #noOrders>
+                        <div class="activity-empty">
+                            <i class="fas fa-inbox"></i>
+                            <span>Aucune commande récente</span>
+                        </div>
+                    </ng-template>
+                </div>
+            </div>
+        </div>
+    </section>
 </div>

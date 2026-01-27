@@ -1,12 +1,75 @@
-<nav class="bg-light sidebar p-3 border-end min-vh-100" style="width: 250px; height: 100vh">
-    <img src="/assets/logo.png" class="img-fluid mb-3" alt="Logo" />
-    <ul class="nav flex-column">
-        <li class="nav-item"><a class="nav-link" routerLink="/admin/dashboard">Accueil / Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/admin/dons">Gestion des dons</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/admin/news">Gestion des actualités</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/admin/produits">Gestion des produits</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/admin/membres">Gestion des membres</a></li>
-        <li class="nav-item"><a class="nav-link" routerLink="/admin/galerie">Gestion de la galerie</a></li>
-        <li class="nav-item"><a class="nav-link text-danger" (click)="logout()">Déconnexion</a></li>
-    </ul>
-</nav>
+<!-- Mobile overlay -->
+<div
+    class="admin-sidebar-overlay"
+    [class.visible]="isMobileOpen"
+    (click)="closeMobile()"
+></div>
+
+<!-- Sidebar -->
+<aside
+    class="admin-sidebar"
+    [class.collapsed]="isCollapsed"
+    [class.mobile-open]="isMobileOpen"
+>
+    <!-- Collapse button -->
+    <button class="admin-sidebar__collapse-btn" (click)="toggleCollapse()">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+
+    <!-- Header -->
+    <div class="admin-sidebar__header">
+        <img src="/assets/logo.png" alt="FFME Logo" class="admin-sidebar__logo" />
+        <span class="admin-sidebar__logo-text">FFME Admin</span>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="admin-sidebar__nav">
+        <div class="admin-sidebar__section">
+            <span class="admin-sidebar__section-title">Menu principal</span>
+            <ul class="admin-sidebar__nav-list">
+                <li *ngFor="let item of navItems">
+                    <a
+                        class="admin-sidebar__nav-item"
+                        [routerLink]="item.route"
+                        routerLinkActive="active"
+                        [routerLinkActiveOptions]="{ exact: item.route === '/admin/dashboard' }"
+                        (click)="closeMobile()"
+                    >
+                        <span class="admin-sidebar__nav-icon">
+                            <i [class]="item.icon"></i>
+                        </span>
+                        <span class="admin-sidebar__nav-text">{{ item.label }}</span>
+                        <span
+                            *ngIf="item.badge"
+                            class="admin-sidebar__nav-badge"
+                            [class.admin-sidebar__nav-badge--danger]="item.badgeType === 'danger'"
+                            [class.admin-sidebar__nav-badge--warning]="item.badgeType === 'warning'"
+                            [class.admin-sidebar__nav-badge--info]="item.badgeType === 'info'"
+                            [class.admin-sidebar__nav-badge--success]="item.badgeType === 'success'"
+                        >
+                            {{ item.badge }}
+                        </span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Footer -->
+    <div class="admin-sidebar__footer">
+        <div class="admin-sidebar__user" (click)="logout()">
+            <div class="admin-sidebar__user-avatar">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <div class="admin-sidebar__user-info">
+                <span class="admin-sidebar__user-name">Déconnexion</span>
+                <span class="admin-sidebar__user-role">Quitter l'administration</span>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- Mobile toggle button (for use in header) -->
+<button class="admin-mobile-toggle" (click)="toggleMobile()">
+    <i class="fas fa-bars"></i>
+</button>

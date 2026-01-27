@@ -14,7 +14,7 @@ export class DonationCommunicationService {
     constructor(private readonly http: HttpClient) {}
 
     getDonationExists(id: string): Observable<{ exists: boolean }> {
-        return this.http.get<{ exists: boolean }>(`${this.baseUrl}${ApiEndpoints.DONATION}/${id}/exists`);
+        return this.http.get<{ exists: boolean }>(`${this.baseUrl}${ApiEndpoints.DONATION}${id}/exists`);
     }
 
     postDonation(data: any): Observable<any> {
@@ -29,13 +29,17 @@ export class DonationCommunicationService {
     }
 
     postPayment(donId: string, body: { method: PaymentMethod; montant: number }): Observable<any> {
-        return this.http.post(`${this.baseUrl}${ApiEndpoints.DONATION}/${donId}/payment-others`, body);
+        return this.http.post(`${this.baseUrl}${ApiEndpoints.DONATION}${donId}/payment-others`, body);
     }
 
     getVerifyPayment(reference: string): Observable<any> {
-        const url = `${this.baseUrl}${ApiEndpoints.DONATION}/payment/status/${reference}`;
+        const url = `${this.baseUrl}${ApiEndpoints.DONATION}payment/status/${reference}`;
         console.log('Requête GET envoyée à :', url);
         return this.http.get(url);
+    }
+
+    verifyPayment(donId: string): Observable<{ success: boolean; message: string }> {
+        return this.http.get<{ success: boolean; message: string }>(`${this.baseUrl}${ApiEndpoints.DONATION}payment/verify/${donId}`);
     }
 
     /*

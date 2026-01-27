@@ -11,3 +11,9 @@ coverage/
 
 #Node Modules
 /node_modules
+
+#Claude
+/.claude-logs/
+CLAUDE.md 
+*.md
+.claude

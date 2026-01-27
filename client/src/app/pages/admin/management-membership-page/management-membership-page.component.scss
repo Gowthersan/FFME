@@ -1,59 +1,75 @@
-.sidebar-fixed {
-    width: 250px;
-    flex-shrink: 0;
-    height: 100vh;
-    position: sticky;
-    top: 0;
-    overflow-y: auto;
-    background-color: #f8f9fa;
-    z-index: 10;
+@use '../../../../styles/admin/variables' as *;
+
+// === LAYOUT ===
+.admin-content {
+    margin-left: $sidebar-width;
+    min-height: 100vh;
+    background: $admin-bg;
+    padding: $admin-spacing-xl;
+
+    @include admin-mobile {
+        margin-left: 0;
+        padding: $admin-spacing-md;
+    }
 }
 
-.main-content {
-    overflow: hidden;
-    height: 100vh;
+// === PAGE HEADER ===
+.admin-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: $admin-spacing-xl;
+    flex-wrap: wrap;
+    gap: $admin-spacing-md;
+
+    &__left {
+        flex: 1;
+    }
+
+    &__title {
+        font-size: $admin-font-size-3xl;
+        font-weight: $admin-font-weight-bold;
+        color: $admin-text-primary;
+        margin: 0 0 $admin-spacing-xs 0;
+    }
+
+    &__subtitle {
+        font-size: $admin-font-size-sm;
+        color: $admin-text-secondary;
+        margin: 0;
+    }
+
+    &__right {
+        display: flex;
+        gap: $admin-spacing-sm;
+    }
 }
 
-.sticky-header {
-    position: sticky;
-    top: 0;
-    z-index: 11;
-    background-color: white;
-}
-
-.scrollable-table {
-    overflow-y: auto;
-    flex-grow: 1;
-    max-height: calc(100vh - 60px); // adapte cette hauteur au besoin
-}
-
-.scrollable-table thead th {
-    position: sticky;
-    top: 0;
-    background-color: #fff; // ou autre couleur
-    z-index: 2;
-}
-.clickable-row {
+// === ADMIN BUTTONS ===
+.admin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: $admin-spacing-sm;
+    padding: $admin-spacing-sm $admin-spacing-lg;
+    font-size: $admin-font-size-sm;
+    font-weight: $admin-font-weight-medium;
+    border-radius: $admin-border-radius;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    @include admin-transition(all);
+    border: 1px solid transparent;
 
-    &:hover {
-        background-color: #eef2f7 !important; // effet visible
+    i {
+        font-size: 14px;
     }
-}
 
-a {
-    text-decoration: none;
+    &--outline {
+        background: $admin-surface;
+        border-color: $admin-border;
+        color: $admin-text-primary;
 
-    &:hover {
-        text-decoration: underline;
+        &:hover {
+            border-color: $admin-primary;
+            color: $admin-primary;
+        }
     }
-}
-
-.scrollable-table table.table tbody tr.clickable-row:hover {
-    background-color: #eef2f7 !important;
-}
-
-.scrollable-table table.table tbody tr.clickable-row:hover td {
-    border-color: transparent;
 }

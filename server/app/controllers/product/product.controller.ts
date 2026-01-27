@@ -37,7 +37,24 @@ export class ProductController {
             try {
                 const { orderId, montant, ...clientData } = req.body;
 
-                const result = await this.productService.saveCommande(clientData, orderId, montant);
+                const result = await this.productService.initiatePayment(clientData, orderId, montant);
+
+                if (!result.success) {
+                    return res.status(400).json({ success: false, message: result.message });
+                }
+
+                return res.status(StatusCodes.OK).json({ success: true, message: result.message, link: result.link });
+            } catch (err) {
+                console.error('❌ Erreur paiement commande:', err);
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Erreur serveur' });
+            }
+        });
+
+        // Vérifier et finaliser la commande après retour de Singpay
+        this.router.get('/payment/verify/:reference', async (req: Request, res: Response) => {
+            try {
+                const reference = req.params.reference as string;
+                const result = await this.productService.verifyAndFinalizeOrder(reference);
 
                 if (!result.success) {
                     return res.status(400).json({ success: false, message: result.message });
@@ -45,7 +62,7 @@ export class ProductController {
 
                 return res.status(StatusCodes.OK).json({ success: true, message: result.message });
             } catch (err) {
-                console.error('❌ Erreur paiement commande:', err);
+                console.error('❌ Erreur vérification commande:', err);
                 return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Erreur serveur' });
             }
         });

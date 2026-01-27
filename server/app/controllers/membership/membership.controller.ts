@@ -1,5 +1,4 @@
 import { MembershipService } from '@app/services/membership/membership.service';
-import { SingPayService } from '@app/services/singpay/singpay.service';
 import { Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import multer from 'multer';
@@ -9,10 +8,7 @@ import { Service } from 'typedi';
 export class MembershipController {
     router: Router;
 
-    constructor(
-        private readonly membershipService: MembershipService,
-        private readonly singPayService: SingPayService,
-    ) {
+    constructor(private readonly membershipService: MembershipService) {
         this.router = Router();
         this.configureRoutes();
     }
@@ -108,26 +104,25 @@ export class MembershipController {
             }
         });
 
-        this.router.get('/payment/status/:reference', async (req, res) => {
+        // Vérifier et finaliser le paiement après retour de Singpay
+        this.router.get('/payment/verify/:reference', async (req, res) => {
             const reference = req.params.reference;
-            const don = this.membershipService.getMembershipById(reference);
-            if (!don) {
-                return res.status(404).json({ success: false, message: 'Adhésion introuvable' });
-            }
 
-            let result = await this.singPayService.getTransactionByReference(reference);
-            if (!result.success) {
-                return res.status(502).json({ success: false, message: result.message });
-            }
+            try {
+                const result = await this.membershipService.verifyAndFinalizeSingPayPayment(reference);
 
-            if (result.success) {
-                // Éviter les doublons : tu peux stocker un flag genre don.confirmed = true
-                // result = await this.mailService.sendConfirmationEmail('raphin.essono@sing.ga', 'Raphin', 150);
-                //result = await this.mailService.sendConfirmationEmail(don.email, don.prenom, don.montant);
-                console.log('wee');
-            }
+                if (!result.success) {
+                    return res.status(StatusCodes.BAD_REQUEST).json(result);
+                }
 
-            return res.status(200).json({ success: true, status: result.status });
+                return res.status(StatusCodes.OK).json(result);
+            } catch (error: any) {
+                console.error('Erreur lors de la vérification du paiement :', error);
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                    success: false,
+                    message: 'Erreur serveur lors de la vérification.',
+                });
+            }
         });
     }
 }

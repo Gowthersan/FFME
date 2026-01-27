@@ -33,6 +33,10 @@ import { NewsPageComponent } from '@app/pages/news-page/news-page.component';
 import { ProductPageComponent } from '@app/pages/product-page/product-page.component';
 import { ShopPageComponent } from '@app/pages/shop-page/shop-page.component';
 import { SuccessPageComponent } from '@app/pages/success-page/success-page.component';
+import { SuccessMembershipPageComponent } from '@app/pages/success-membership-page/success-membership-page.component';
+import { FailedMembershipPageComponent } from '@app/pages/failed-membership-page/failed-membership-page.component';
+import { SuccessDonationPageComponent } from '@app/pages/success-donation-page/success-donation-page.component';
+import { FailedDonationPageComponent } from '@app/pages/failed-donation-page/failed-donation-page.component';
 import { environment } from './environments/environment';
 
 registerLocaleData(localeFr);
@@ -54,6 +58,10 @@ const routes: Routes = [
     { path: 'confirmation/:membreId', component: ConfirmMembershipPageComponent },
     { path: 'succes/:donId', component: SuccessPageComponent },
     { path: 'echec/:donId', component: FailedPageComponent },
+    { path: 'succes-adhesion/:membershipId', component: SuccessMembershipPageComponent },
+    { path: 'echec-adhesion/:membershipId', component: FailedMembershipPageComponent },
+    { path: 'succes-don/:donId', component: SuccessDonationPageComponent },
+    { path: 'echec-don/:donId', component: FailedDonationPageComponent },
     { path: 'membre', component: MembershipPageComponent },
     { path: 'galerie', component: GalleryPageComponent },
     { path: 'game', component: GamePageComponent },

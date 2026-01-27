@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
     selector: 'app-dialog-preface',
+    standalone: true,
+    imports: [MatDialogModule],
     templateUrl: './dialog-preface.component.html',
     styleUrls: ['./dialog-preface.component.scss'],
 })

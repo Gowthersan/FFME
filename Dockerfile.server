@@ -1,0 +1,66 @@
+# Stage 1: Build TypeScript application
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy common interfaces first (needed for build)
+COPY common ./common
+
+# Copy server package files
+COPY server/package.json server/pnpm-lock.yaml ./server/
+
+# Install dependencies
+WORKDIR /app/server
+RUN pnpm install --frozen-lockfile
+
+# Copy server source code
+WORKDIR /app
+COPY server ./server
+
+# Build the application
+WORKDIR /app/server
+RUN pnpm run build
+
+# Stage 2: Production runtime
+FROM node:20-alpine AS production
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Copy package files
+COPY server/package.json server/pnpm-lock.yaml ./
+
+# Install all dependencies (including devDependencies needed at runtime)
+RUN pnpm install --frozen-lockfile
+
+# Copy built files from builder stage
+COPY --from=builder /app/server/out ./out
+
+# Create uploads directory with proper permissions
+RUN mkdir -p uploads assets && chown -R nodejs:nodejs uploads assets
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
+EXPOSE 3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Start the application
+CMD ["node", "out/server/app/index.js"]

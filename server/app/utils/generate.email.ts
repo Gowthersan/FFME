@@ -1,8 +1,14 @@
+import { HOST } from '@app/env';
+
+// URL de base pour les emails (enlève le slash final si présent)
+const getBaseUrl = () => HOST.clientUrl.replace(/\/$/, '');
+
 export function generateDonationConfirmationEmail(prenom: string, montant: number): string {
+    const baseUrl = getBaseUrl();
     return `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #ffffff; border: 1px solid #ddd;">
     <div style="text-align: center;">
-      <img src="https://fondationfrancoismeye.ga/assets/logo.png" alt="Logo Fondation François Méyé" style="max-width: 180px; margin-bottom: 20px;" />
+      <img src="${baseUrl}/assets/logo.png" alt="Logo Fondation François Méyé" style="max-width: 180px; margin-bottom: 20px;" />
     </div>
     <h2 style="color: #333;">Merci ${prenom} </h2>
     <p style="font-size: 16px; color: #555;">
@@ -14,7 +20,7 @@ export function generateDonationConfirmationEmail(prenom: string, montant: numbe
     <hr style="margin: 30px 0;" />
     <p style="font-size: 14px; color: #777; text-align: center;">
       Fondation François Méyé - Ensemble pour un avenir meilleur<br />
-      Site Web : <a href="https://fondationfrancoismeye.ga/" style="color: #007BFF;">www.fondationfrancoismeye.ga</a>
+      Site Web : <a href="${baseUrl}/" style="color: #007BFF;">fondationfrancoismeye.ga</a>
     </p>
   </div>
   `;
@@ -46,14 +52,15 @@ export function generateDonationConfirmationEmail(prenom: string, montant: numbe
 // }
 
 export function generatePendingDonationEmail(prenom: string, montant: number): string {
+    const baseUrl = getBaseUrl();
     return `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #ffffff; border: 1px solid #ddd;">
     <div style="text-align: center;">
-      <img src="https://fondationfrancoismeye.ga/assets/logo.png" alt="Logo Fondation François Méyé" style="max-width: 180px; margin-bottom: 20px;" />
+      <img src="${baseUrl}/assets/logo.png" alt="Logo Fondation François Méyé" style="max-width: 180px; margin-bottom: 20px;" />
     </div>
     <h2 style="color: #333;">Merci ${prenom}</h2>
     <p style="font-size: 16px; color: #555;">
-      Nous avons bien reçu l’enregistrement de votre don de <strong>${montant.toLocaleString()} FCFA</strong> à la Fondation François Méyé.
+      Nous avons bien reçu l'enregistrement de votre don de <strong>${montant.toLocaleString()} FCFA</strong> à la Fondation François Méyé.
     </p>
     <p style="font-size: 16px; color: #555;">
       Ce don est actuellement enregistré <strong>à titre temporaire</strong> en attendant la validation de votre paiement par RIB.
@@ -75,17 +82,18 @@ export function generatePendingDonationEmail(prenom: string, montant: number): s
     <hr style="margin: 30px 0;" />
     <p style="font-size: 14px; color: #777; text-align: center;">
       Fondation François Méyé - Ensemble pour un avenir meilleur<br />
-      Site Web : <a href="https://fondationfrancoismeye.ga/" style="color: #007BFF;">www.fondationfrancoismeye.ga</a>
+      Site Web : <a href="${baseUrl}/" style="color: #007BFF;">fondationfrancoismeye.ga</a>
     </p>
   </div>
   `;
 }
 
 export function generateConfirmedDonationEmail(prenom: string, nom: string, montant: number, phone: string): string {
+    const baseUrl = getBaseUrl();
     return `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #ffffff; border: 1px solid #ddd;">
     <div style="text-align: center;">
-      <img src="https://fondationfrancoismeye.ga/assets/logo.png" alt="Logo Fondation François Méyé" style="max-width: 180px; margin-bottom: 20px;" />
+      <img src="${baseUrl}/assets/logo.png" alt="Logo Fondation François Méyé" style="max-width: 180px; margin-bottom: 20px;" />
     </div>
     <h2 style="color: #333;">Merci ${prenom}</h2>
     <p style="font-size: 16px; color: #555;">
@@ -95,7 +103,7 @@ export function generateConfirmedDonationEmail(prenom: string, nom: string, mont
       Votre don a été <strong>validé avec succès</strong> et a bien été ajouté à notre base de données.
     </p>
     <p style="font-size: 16px; color: #555;">
-      Toute l’équipe de la Fondation vous remercie chaleureusement pour votre soutien. Votre geste contribue à la réalisation de nos actions pour un avenir meilleur.
+      Toute l'équipe de la Fondation vous remercie chaleureusement pour votre soutien. Votre geste contribue à la réalisation de nos actions pour un avenir meilleur.
     </p>
 
     <div style="margin: 30px 0; background: #f1fdf4; padding: 20px; border: 1px solid #c6eccf; border-radius: 8px;">
@@ -112,7 +120,7 @@ export function generateConfirmedDonationEmail(prenom: string, nom: string, mont
     <hr style="margin: 30px 0;" />
     <p style="font-size: 14px; color: #777; text-align: center;">
       Fondation François Méyé - Ensemble pour un avenir meilleur<br />
-      Site Web : <a href="https://fondationfrancoismeye.ga/" style="color: #007BFF;">www.fondationfrancoismeye.ga</a>
+      Site Web : <a href="${baseUrl}/" style="color: #007BFF;">fondationfrancoismeye.ga</a>
     </p>
   </div>
   `;
@@ -125,6 +133,7 @@ export function generateOrderConfirmationEmail(
     phone: string,
     produits: { title: string; type: string }[],
 ): string {
+    const baseUrl = getBaseUrl();
     const productList = produits
         .map(
             (p) => `
@@ -139,11 +148,11 @@ export function generateOrderConfirmationEmail(
     return `
   <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; background: #ffffff; border: 1px solid #ddd;">
     <div style="text-align: center;">
-      <img src="https://fondationfrancoismeye.ga/assets/logo.png" alt="Logo Fondation François Méyé" style="max-width: 180px; margin-bottom: 20px;" />
+      <img src="${baseUrl}/assets/logo.png" alt="Logo Fondation François Méyé" style="max-width: 180px; margin-bottom: 20px;" />
     </div>
     <h2 style="color: #333;">Commande confirmée</h2>
     <p style="font-size: 16px; color: #555;">
-      Merci <strong>${prenom} ${nom}</strong> pour votre commande d’un montant de <strong>${montant.toLocaleString()} FCFA</strong>.
+      Merci <strong>${prenom} ${nom}</strong> pour votre commande d'un montant de <strong>${montant.toLocaleString()} FCFA</strong>.
     </p>
     <p style="font-size: 16px; color: #555;">
       Votre numéro de téléphone : <strong>${phone}</strong>
@@ -160,7 +169,7 @@ export function generateOrderConfirmationEmail(
     <hr style="margin: 30px 0;" />
     <p style="font-size: 14px; color: #777; text-align: center;">
       Fondation François Méyé - Ensemble pour un avenir meilleur<br />
-      Site Web : <a href="https://fondationfrancoismeye.ga/" style="color: #007BFF;">www.fondationfrancoismeye.ga</a>
+      Site Web : <a href="${baseUrl}/" style="color: #007BFF;">fondationfrancoismeye.ga</a>
     </p>
   </div>
   `;

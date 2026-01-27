@@ -1,48 +1,32 @@
-<app-loading-spinner [show]="isLoading"></app-loading-spinner>
 <app-admin-sidebar></app-admin-sidebar>
-<div class="with-sidebar">
-    <div class="d-flex min-vh-100 overflow-hidden">
-        <div class="main-content flex-grow-1 d-flex flex-column">
-            <div class="sticky-header bg-white border-bottom p-3">
-                <h2 class="m-0">Gestion des dons</h2>
-            </div>
 
-            <div class="scrollable-table px-4 py-3">
-                <table class="table table-bordered">
-                    <thead class="thead-light">
-                        <tr>
-                            <th>Prénom</th>
-                            <th>Nom</th>
-                            <th>Email</th>
-                            <th>Montant</th>
-                            <th>Statut</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let don of donations" (click)="goToDonation(don.idDonation)" class="clickable-row">
-                            <td>{{ don.firstName }}</td>
-                            <td>{{ don.lastName }}</td>
-                            <td>{{ don.email }}</td>
-                            <td>{{ don.amount | number }} FCFA</td>
-                            <td>
-                                <span
-                                    class="badge"
-                                    [ngClass]="{
-                                        'bg-success': don.isPaid === PaymentStatus.COMPLETED,
-                                        'bg-warning text-dark': don.isPaid === PaymentStatus.PENDING,
-                                        'bg-danger': don.isPaid === PaymentStatus.FAILURE
-                                    }"
-                                >
-                                    {{ don.isPaid === PaymentStatus.COMPLETED ? 'Payé' : don.isPaid === PaymentStatus.PENDING ? 'En attente' : 'Échoué' }}
-                                </span>
-                            </td>
-                        </tr>
-                        <tr *ngIf="!isLoading && donations.length === 0">
-                            <td colspan="5" class="text-center text-muted py-4">Aucun don enregistré</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+<div class="admin-content">
+    <!-- Header -->
+    <header class="admin-page-header">
+        <div class="admin-page-header__left">
+            <h1 class="admin-page-header__title">Gestion des dons</h1>
+            <p class="admin-page-header__subtitle">Consultez et gérez tous les dons reçus</p>
         </div>
-    </div>
+        <div class="admin-page-header__right">
+            <button class="admin-btn admin-btn--outline" (click)="loadDonations()">
+                <i class="fas fa-sync-alt" [class.fa-spin]="isLoading"></i>
+                Actualiser
+            </button>
+        </div>
+    </header>
+
+    <!-- Data Table -->
+    <app-data-table
+        [data]="donations"
+        [columns]="columns"
+        title="Liste des dons"
+        [loading]="isLoading"
+        [selectable]="true"
+        [exportable]="true"
+        [searchable]="true"
+        emptyMessage="Aucun don enregistré"
+        emptyIcon="fas fa-hand-holding-heart"
+        (rowClick)="onRowClick($event)"
+        (selectionChange)="onSelectionChange($event)"
+    ></app-data-table>
 </div>

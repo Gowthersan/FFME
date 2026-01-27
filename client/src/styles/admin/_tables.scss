@@ -252,7 +252,7 @@
 
   &__input {
     width: 100%;
-    padding: $admin-spacing-sm $admin-spacing-md $admin-spacing-sm ($admin-spacing-md + 26px);
+    padding: $admin-spacing-sm $admin-spacing-md $admin-spacing-sm calc(#{$admin-spacing-md} + 26px);
     font-size: $admin-font-size-sm;
     border: 1px solid $admin-border;
     border-radius: $admin-border-radius;

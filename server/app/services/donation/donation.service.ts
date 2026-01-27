@@ -3,22 +3,22 @@ import * as mailType from '@app/utils/generate.email';
 import { PaymentMethod } from '@common/enums/payment-method';
 import { PaymentStatus } from '@common/enums/payment-status';
 import { Donation } from '@common/interfaces/donation';
+import { Transaction } from '@common/interfaces/transaction';
 import * as crypto from 'crypto';
-import { setTimeout as delay } from 'timers/promises'; // utile pour faire une pause
 import { Service } from 'typedi';
 import { DonationDatabaseService } from '../database/donation/donation.database.service';
+import { TransactionDatabaseService } from '../database/transaction/transaction.database.service';
 import { MailService } from '../mail/mail.service';
 import { SingPayService } from '../singpay/singpay.service';
 
 @Service()
 export class DonationService {
     private readonly storedDonations: Map<string, DonationData> = new Map();
-    private readonly timeouts: Map<string, NodeJS.Timeout> = new Map(); // Pour stocker les timeouts
-
-    //private readonly EXPIRATION_MS = 2 * 60 * 1000; // 2 minutes
+    private readonly timeouts: Map<string, NodeJS.Timeout> = new Map();
 
     constructor(
         private readonly donationDatabaseService: DonationDatabaseService,
+        private readonly transactionDbService: TransactionDatabaseService,
         private readonly singPayService: SingPayService,
         private readonly mailService: MailService,
     ) {}
@@ -50,49 +50,64 @@ export class DonationService {
         return this.storedDonations.get(id);
     }
 
-    async saveDonationWithSingPay(donId: string): Promise<{ success: boolean; message: string }> {
+    /**
+     * Initie le paiement Singpay et retourne le lien de redirection
+     */
+    async initiateSingPayPayment(donId: string): Promise<{ success: boolean; link?: string; message?: string }> {
         const don = this.storedDonations.get(donId);
         if (!don) return { success: false, message: 'Don introuvable' };
 
-        const payment = await this.singPayService.initiateSimple(donId, 110, '074136289');
-        if (!payment.success) {
-            return { success: false, message: payment.message };
+        // Initier le paiement avec le montant du don
+        const payment = await this.singPayService.initiatePayment(donId, don.montant, 'donation');
+
+        if (!payment.success || !payment.link) {
+            return { success: false, message: payment.message || 'Erreur lors de l\'initiation du paiement' };
         }
 
-        let statusOk = false;
-        let maxAttempts = 9; // ⏳ max 1 minute (9 * 10s)
-        let resultMessage = '';
+        // Créer une transaction pour traçabilité
+        const transaction: Transaction = {
+            id: crypto.randomUUID(),
+            type: 'donation',
+            entityId: donId,
+            reference: donId,
+            amount: don.montant,
+            status: 'initiated',
+            paymentMethod: PaymentMethod.SING_PAY,
+            payerFirstName: don.prenom ?? '',
+            payerLastName: don.nom ?? '',
+            payerPhone: don.numero ?? '',
+            payerEmail: don.email,
+            initiatedAt: new Date().toISOString(),
+        };
 
-        while (maxAttempts > 0) {
-            console.log(`⏳ Vérification paiement [tentative ${10 - maxAttempts}/9]`);
-            const tx = await this.singPayService.getTransactionByReference(donId);
+        await this.transactionDbService.create(transaction);
 
-            if (tx.success) {
-                const status = tx.status;
-                const result = tx.raw?.result;
+        return { success: true, link: payment.link };
+    }
 
-                if (status === 'Disbursement' || (status === 'Terminate' && result !== 'TimeOutError')) {
-                    statusOk = true;
-                    break;
-                }
+    /**
+     * Vérifie le paiement Singpay et finalise le don si confirmé
+     */
+    async verifyAndFinalizeDonation(donId: string): Promise<{ success: boolean; message: string }> {
+        const don = this.storedDonations.get(donId);
+        if (!don) return { success: false, message: 'Don introuvable ou déjà traité' };
 
-                if (status === 'Terminate' && result === 'TimeOutError') {
-                    resultMessage = 'Le paiement a expiré (TimeOutError).';
-                    break;
-                }
-            }
+        // Vérifier le statut du paiement auprès de Singpay
+        const tx = await this.singPayService.getTransactionByReference(donId);
 
-            maxAttempts--;
-            await delay(10000); // ⏱ pause de 10 secondes
+        if (!tx.success) {
+            return { success: false, message: tx.message || 'Erreur lors de la vérification du paiement' };
         }
 
-        if (statusOk) {
-            // ✅ Paiement confirmé : à ce moment tu peux enregistrer définitivement dans Mongo
-            //this.commandesTemp.delete(orderId);
+        const status = tx.status;
+        const result = tx.raw?.result;
 
+        // Vérifier si le paiement est confirmé
+        if (status === 'Disbursement' || (status === 'Terminate' && result !== 'TimeOutError')) {
+            // ✅ Paiement confirmé : enregistrer le don en base
             const donation: Donation = {
                 idDonation: donId,
-                projectMotivation: don.motif ?? '', // ou 'Projet de soutien'
+                projectMotivation: don.motif ?? '',
                 firstName: don.prenom ?? '',
                 lastName: don.nom ?? '',
                 phone: don.numero ?? '',
@@ -105,15 +120,18 @@ export class DonationService {
 
             await this.donationDatabaseService.create(donation);
             this.storedDonations.delete(donId);
-            const html = mailType.generateConfirmedDonationEmail(don.prenom, don.nom, don.montant, don.numero);
 
+            const html = mailType.generateConfirmedDonationEmail(don.prenom, don.nom, don.montant, don.numero);
             await this.mailService.sendMail(don.email, 'Confirmation de don', html);
 
-            return { success: true, message: 'Paiement confirmé, don enregistrée.' };
+            return { success: true, message: 'Paiement confirmé, don enregistré avec succès.' };
         }
 
-        this.storedDonations.delete(donId);
-        return { success: false, message: resultMessage || 'Paiement non confirmé dans le temps imparti.' };
+        if (status === 'Terminate' && result === 'TimeOutError') {
+            return { success: false, message: 'Le paiement a expiré.' };
+        }
+
+        return { success: false, message: `Paiement non confirmé. Statut: ${status}` };
     }
 
     async saveDonationWithRIB(donId: string): Promise<{ success: boolean; message: string }> {
@@ -140,6 +158,47 @@ export class DonationService {
         await this.mailService.sendMail(don.email, 'Confirmation de don', html);
 
         return { success: true, message: 'Don enregistré avec succès en attente de virement' };
+    }
+
+    /**
+     * Finalise un don depuis le webhook Singpay
+     * Appelé quand le paiement est confirmé via webhook
+     */
+    async finalizeFromWebhook(donId: string): Promise<{ success: boolean; message: string }> {
+        const don = this.storedDonations.get(donId);
+        if (!don) {
+            // Vérifier si le don n'est pas déjà en base
+            const existingDonation = await this.donationDatabaseService.getById(donId);
+            if (existingDonation) {
+                console.log(`⚠️ Don ${donId} déjà finalisé`);
+                return { success: true, message: 'Don déjà enregistré' };
+            }
+            return { success: false, message: 'Don introuvable' };
+        }
+
+        // Enregistrer le don en base
+        const donation: Donation = {
+            idDonation: donId,
+            projectMotivation: don.motif ?? '',
+            firstName: don.prenom ?? '',
+            lastName: don.nom ?? '',
+            phone: don.numero ?? '',
+            email: don.email,
+            amount: don.montant,
+            paymentMethod: PaymentMethod.SING_PAY,
+            isPaid: PaymentStatus.COMPLETED,
+            registrationDate: new Date().toISOString(),
+        };
+
+        await this.donationDatabaseService.create(donation);
+        this.storedDonations.delete(donId);
+
+        // Envoyer l'email de confirmation
+        const html = mailType.generateConfirmedDonationEmail(don.prenom, don.nom, don.montant, don.numero);
+        await this.mailService.sendMail(don.email, 'Confirmation de don', html);
+
+        console.log(`✅ Don ${donId} finalisé via webhook`);
+        return { success: true, message: 'Don enregistré avec succès via webhook' };
     }
 
     // Facultatif : supprimer manuellement un don (ex. après paiement confirmé)

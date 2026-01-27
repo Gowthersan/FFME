@@ -145,8 +145,16 @@ $admin-breakpoint-2xl: 1536px;
   border-color: $admin-border-dark;
 }
 
-@mixin admin-transition($properties: all) {
-  transition: $properties $admin-transition-normal $admin-ease-out;
+@mixin admin-transition($properties...) {
+  @if length($properties) == 0 {
+    transition: all $admin-transition-normal $admin-ease-out;
+  } @else {
+    $transitions: ();
+    @each $prop in $properties {
+      $transitions: append($transitions, $prop $admin-transition-normal $admin-ease-out, comma);
+    }
+    transition: $transitions;
+  }
 }
 
 @mixin admin-focus-ring {

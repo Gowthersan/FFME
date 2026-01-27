@@ -35,9 +35,20 @@ export class DonationController {
                 return res.status(404).json({ success: false, message: 'Don introuvable ou expiré' });
             }
 
-            const result = await this.donationService.saveDonationWithSingPay(donId);
+            const result = await this.donationService.initiateSingPayPayment(donId);
             if (!result.success) {
                 return res.status(500).json({ success: false, message: result.message });
+            }
+
+            return res.status(200).json({ success: true, link: result.link });
+        });
+
+        this.router.get('/payment/verify/:reference', async (req: Request, res: Response) => {
+            const reference = req.params.reference as string;
+            const result = await this.donationService.verifyAndFinalizeDonation(reference);
+
+            if (!result.success) {
+                return res.status(400).json({ success: false, message: result.message });
             }
 
             return res.status(200).json({ success: true, message: result.message });

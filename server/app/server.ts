@@ -3,6 +3,7 @@ import * as http from 'http';
 import { AddressInfo } from 'net';
 import { Service } from 'typedi';
 import { MongoConnectionService } from './services/database/mongo.connection.service';
+import { TransactionReconciliationService } from './services/transaction/transaction.reconciliation.service';
 
 @Service()
 export class Server {
@@ -14,6 +15,7 @@ export class Server {
     constructor(
         private readonly application: Application,
         private readonly mongoConnection: MongoConnectionService,
+        private readonly reconciliationService: TransactionReconciliationService,
     ) {}
 
     private static normalizePort(val: number | string): number | string | boolean {
@@ -29,7 +31,11 @@ export class Server {
 
         this.server.listen(Server.appPort);
         this.server.on('error', (error: NodeJS.ErrnoException) => this.onError(error));
-        this.server.on('listening', () => this.onListening());
+        this.server.on('listening', () => {
+            this.onListening();
+            // Démarrer le service de réconciliation des transactions (vérification toutes les 5 minutes)
+            this.reconciliationService.start(5);
+        });
     }
 
     private onError(error: NodeJS.ErrnoException): void {

@@ -1,0 +1,37 @@
+# Stage 1: Build Angular application
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Copy common folder first (needed for @common/* imports)
+COPY common ./common
+
+# Copy client package files
+COPY client/package.json client/pnpm-lock.yaml ./client/
+
+# Install dependencies
+WORKDIR /app/client
+RUN pnpm install --frozen-lockfile
+
+# Copy client source code
+WORKDIR /app
+COPY client ./client
+
+# Build the application
+WORKDIR /app/client
+RUN pnpm run build
+
+# Stage 2: Serve with Nginx
+FROM nginx:alpine AS production
+
+# Copy built files from builder stage
+COPY --from=builder /app/client/dist/client /usr/share/nginx/html
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]

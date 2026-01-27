@@ -1,4 +1,12 @@
+// ========================================
+// CONFIGURATION PRODUCTION
+// ========================================
+
 export const environment = {
     production: true,
-    serverUrl: 'http://localhost:3000/api', // TODO: Add remote server URL
+    serverUrl: 'https://api.fondationfrancoismeye.ga/api',
+    domains: {
+        api: 'api.fondationfrancoismeye.ga',
+        frontend: 'fondationfrancoismeye.ga',
+    },
 };

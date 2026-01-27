@@ -5,7 +5,6 @@ import { PaymentStatus } from '@common/enums/payment-status';
 import { Product } from '@common/interfaces/product';
 import { ProductOrder } from '@common/interfaces/product-order';
 import * as crypto from 'crypto';
-import { setTimeout as delay } from 'timers/promises'; // utile pour faire une pause
 import { Service } from 'typedi';
 import { ProductDatabaseService } from '../database/product/product.database.service';
 import { MailService } from '../mail/mail.service';
@@ -13,7 +12,8 @@ import { SingPayService } from '../singpay/singpay.service';
 
 type CommandeTemp = {
     montant: number;
-    items: Product[]; // Produits bruts uniquement
+    items: Product[];
+    clientData?: any;
 };
 
 @Service()
@@ -60,7 +60,14 @@ export class ProductService {
         return { success: true, orderId, total };
     }
 
-    async saveCommande(clientData: any, orderId: string, montant: number): Promise<{ success: boolean; message: string; link?: any }> {
+    /**
+     * Stocke les données client et initie le paiement Singpay
+     */
+    async initiatePayment(
+        clientData: any,
+        orderId: string,
+        montant: number,
+    ): Promise<{ success: boolean; message: string; link?: string }> {
         clientData.montant = montant;
         const parsed = ProductCommandeSchema.safeParse(clientData);
         if (!parsed.success) {
@@ -78,58 +85,47 @@ export class ProductService {
             return { success: false, message: 'Montant incorrect.' };
         }
 
-        // const finalCommande = {
-        //     ...parsed.data,
-        //     montant: temp.montant,
-        //     items: temp.items,
-        // };
+        // Stocker les données client pour la finalisation
+        temp.clientData = parsed.data;
 
-        //this.commandesTemp.delete(orderId);
-
-        const payment = await this.singPayService.initiateSimple(orderId, 110, '074136289');
-        if (!payment.success) {
-            return { success: false, message: payment.message };
+        // Initier le paiement avec redirection vers le portail Singpay
+        const payment = await this.singPayService.initiatePayment(orderId, montant, 'product');
+        if (!payment.success || !payment.link) {
+            return { success: false, message: payment.message || 'Erreur lors de l\'initiation du paiement' };
         }
 
-        ///
-        let statusOk = false;
-        let maxAttempts = 9; // ⏳ max 1 minute (9 * 10s)
-        let resultMessage = '';
+        return { success: true, message: 'Redirection vers Sing Pay...', link: payment.link };
+    }
 
-        while (maxAttempts > 0) {
-            console.log(`⏳ Vérification paiement [tentative ${10 - maxAttempts}/9]`);
-            const tx = await this.singPayService.getTransactionByReference(orderId);
-
-            if (tx.success) {
-                const status = tx.status;
-                const result = tx.raw?.result;
-
-                if (status === 'Disbursement' || (status === 'Terminate' && result !== 'TimeOutError')) {
-                    statusOk = true;
-                    break;
-                }
-
-                if (status === 'Terminate' && result === 'TimeOutError') {
-                    resultMessage = 'Le paiement a expiré (TimeOutError).';
-                    break;
-                }
-            }
-
-            maxAttempts--;
-            await delay(10000); // ⏱ pause de 10 secondes
+    /**
+     * Vérifie le paiement et finalise la commande si confirmé
+     */
+    async verifyAndFinalizeOrder(orderId: string): Promise<{ success: boolean; message: string }> {
+        const temp = this.commandesTemp.get(orderId);
+        if (!temp || !temp.clientData) {
+            return { success: false, message: 'Commande introuvable ou déjà traitée.' };
         }
 
-        if (statusOk) {
-            // ✅ Paiement confirmé : à ce moment tu peux enregistrer définitivement dans Mongo
-            this.commandesTemp.delete(orderId);
+        // Vérifier le statut du paiement auprès de Singpay
+        const tx = await this.singPayService.getTransactionByReference(orderId);
 
+        if (!tx.success) {
+            return { success: false, message: tx.message || 'Erreur lors de la vérification du paiement' };
+        }
+
+        const status = tx.status;
+        const result = tx.raw?.result;
+
+        // Vérifier si le paiement est confirmé
+        if (status === 'Disbursement' || (status === 'Terminate' && result !== 'TimeOutError')) {
+            // ✅ Paiement confirmé : enregistrer la commande
             const finalCommande: ProductOrder = {
-                _id: '', // Mongo va le générer automatiquement
+                _id: '',
                 idOrder: orderId,
-                firstName: parsed.data.prenom,
-                lastName: parsed.data.nom,
-                phone: parsed.data.numero,
-                email: parsed.data.email,
+                firstName: temp.clientData.prenom,
+                lastName: temp.clientData.nom,
+                phone: temp.clientData.numero,
+                email: temp.clientData.email,
                 isPaid: PaymentStatus.COMPLETED,
                 paymentMethod: PaymentMethod.SING_PAY,
                 date: new Date().toISOString(),
@@ -137,26 +133,27 @@ export class ProductService {
             };
 
             await this.productDatabaseService.createProductOrder(finalCommande);
+            this.commandesTemp.delete(orderId);
 
             const html = mailType.generateOrderConfirmationEmail(
-                parsed.data.prenom,
-                parsed.data.nom,
-                montant,
-                parsed.data.numero,
-                temp.items.map((item) => {
-                    const product = temp.items.find((p) => p._id === item._id);
-                    return {
-                        title: product?.title || '',
-                        type: product?.type || '',
-                    };
-                }),
+                temp.clientData.prenom,
+                temp.clientData.nom,
+                temp.montant,
+                temp.clientData.numero,
+                temp.items.map((item) => ({
+                    title: item.title || '',
+                    type: item.type || '',
+                })),
             );
-            await this.mailService.sendMail(parsed.data.email, 'Confirmation de commande', html);
+            await this.mailService.sendMail(temp.clientData.email, 'Confirmation de commande', html);
 
             return { success: true, message: 'Paiement confirmé, commande enregistrée.' };
         }
 
-        this.commandesTemp.delete(orderId);
-        return { success: false, message: resultMessage || 'Paiement non confirmé dans le temps imparti.' };
+        if (status === 'Terminate' && result === 'TimeOutError') {
+            return { success: false, message: 'Le paiement a expiré.' };
+        }
+
+        return { success: false, message: `Paiement non confirmé. Statut: ${status}` };
     }
 }

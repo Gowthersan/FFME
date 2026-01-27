@@ -28,6 +28,14 @@ export class AdminCommunicationService {
         return this.http.get<DashboardStats>(`${this.baseUrl}stats`, { headers: this.getAuthHeaders() });
     }
 
+    // Chart Data for Dashboard
+    getChartData(): Observable<{ labels: string[]; donations: number[]; members: number[]; amounts: number[] }> {
+        return this.http.get<{ labels: string[]; donations: number[]; members: number[]; amounts: number[] }>(
+            `${this.baseUrl}stats/charts`,
+            { headers: this.getAuthHeaders() },
+        );
+    }
+
     // Membres
     getAllMembers(): Observable<Member[]> {
         return this.http.get<Member[]>(`${this.baseUrl}members`, { headers: this.getAuthHeaders() });

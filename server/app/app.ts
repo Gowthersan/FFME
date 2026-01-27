@@ -1,6 +1,7 @@
 import { HttpException } from '@app/classes/http.exception';
 import { DateController } from '@app/controllers/date/date.controller';
 import { ExampleController } from '@app/controllers/example/example.controller';
+import { HOST } from '@app/env';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -17,6 +18,7 @@ import { GalleryController } from './controllers/gallery/gallery.controller';
 import { MembershipController } from './controllers/membership/membership.controller';
 import { NewsController } from './controllers/news/news.controller';
 import { ProductController } from './controllers/product/product.controller';
+import { WebhookController } from './controllers/webhook/webhook.controller';
 
 @Service()
 export class Application {
@@ -32,6 +34,7 @@ export class Application {
         private readonly membershipController: MembershipController,
         private readonly galleryController: GalleryController,
         private readonly newsController: NewsController,
+        private readonly webhookController: WebhookController,
 
         private readonly adminController: AdminController,
         private readonly adminProductController: AdminProductController,
@@ -57,6 +60,11 @@ export class Application {
     }
 
     bindRoutes(): void {
+        // Health check endpoint for Docker/Kubernetes
+        this.app.get('/api/health', (req, res) => {
+            res.status(StatusCodes.OK).json({ status: 'ok', timestamp: new Date().toISOString() });
+        });
+
         this.app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerJSDoc(this.swaggerOptions)));
         this.app.use('/api/donation', this.donationController.router);
         this.app.use('/api/example', this.exampleController.router);
@@ -65,6 +73,8 @@ export class Application {
         this.app.use('/api/gallery', this.galleryController.router);
         this.app.use('/api/news', this.newsController.router);
         this.app.use('/api/date', this.dateController.router);
+
+        this.app.use('/api/webhook', this.webhookController.router);
 
         this.app.use('/api/admin', this.adminController.router);
         this.app.use('/api/admin/gallery', this.adminGalleryController.router);
@@ -78,9 +88,18 @@ export class Application {
 
     private config(): void {
         // Middlewares configuration
+        // Génère la liste des origines autorisées à partir de l'environnement
+        const allowedOrigins = [HOST.clientUrl.replace(/\/$/, '')]; // Enlève le slash final
+        // En développement, on accepte aussi localhost
+        if (process.env.NODE_ENV !== 'production') {
+            allowedOrigins.push('http://localhost:4200');
+        }
+        // Docker: accepter les connexions depuis le client nginx
+        allowedOrigins.push('http://localhost', 'http://localhost:80', 'http://client', 'http://client:80');
+
         this.app.use(
             cors({
-                origin: ['https://fondationfrancoismeye.ga', 'http://localhost:4200'],
+                origin: allowedOrigins,
                 credentials: true,
             }),
         );

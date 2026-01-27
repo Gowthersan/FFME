@@ -2,117 +2,91 @@ import { HOST, singPayConfig } from '@app/env';
 import axios from 'axios';
 import { Service } from 'typedi';
 
+export type PaymentType = 'membership' | 'donation' | 'product';
+
 @Service()
 export class SingPayService {
-    private readonly apiUrl = 'https://gateway.singpay.ga/v1';
+    private readonly apiUrl = singPayConfig.apiUrl;
+    private readonly transactionsUrl = singPayConfig.transactionsUrl;
 
-    async initiatePayment(reference: string, montant: number): Promise<{ success: boolean; link?: string; message?: string }> {
+    /**
+     * Génère une URL de paiement vers le portail Singpay (mode gateway)
+     * L'utilisateur est redirigé vers Singpay pour payer
+     */
+    async initiatePayment(
+        reference: string,
+        montant: number,
+        type: PaymentType = 'membership',
+    ): Promise<{ success: boolean; link?: string; message?: string }> {
+        // Définir les URLs de redirection selon le type de paiement
+        const redirectUrls = {
+            membership: {
+                success: `${HOST.clientUrl}succes-adhesion/${reference}`,
+                error: `${HOST.clientUrl}echec-adhesion/${reference}`,
+            },
+            donation: {
+                success: `${HOST.clientUrl}succes-don/${reference}`,
+                error: `${HOST.clientUrl}echec-don/${reference}`,
+            },
+            product: {
+                success: `${HOST.clientUrl}succes-commande/${reference}`,
+                error: `${HOST.clientUrl}echec-commande/${reference}`,
+            },
+        };
+
         const payload = {
             portefeuille: singPayConfig.walletId,
             reference: reference,
-            redirect_success: `${HOST.serverUrl}succes/${reference}`,
-            redirect_error: `${HOST.serverUrl}echec/${reference}`,
+            redirect_success: redirectUrls[type].success,
+            redirect_error: redirectUrls[type].error,
             amount: montant,
             disbursement: singPayConfig.disbursementId,
-            logURL: 'https://tonsite.com/log',
             isTransfer: false,
         };
 
         const headers = {
+            accept: '*/*',
             'x-client-id': singPayConfig.clientId,
             'x-client-secret': singPayConfig.clientSecret,
             'x-wallet': singPayConfig.walletId,
             'Content-Type': 'application/json',
         };
 
-        console.log('📤 Envoi à SING Pay :', {
+        console.log('📤 Envoi à SING Pay Gateway :', {
             url: this.apiUrl,
-            headers,
             body: payload,
         });
 
         try {
-            const response = await axios.post(`${this.apiUrl}/74/paiement`, payload, { headers });
+            const response = await axios.post(this.apiUrl, payload, { headers });
             console.log('✅ Réponse SING Pay :', response.data);
 
             if (!response.data?.link) {
-                return { success: false, message: 'Lien de paiement introuvable dans la réponse.' };
+                console.error('❌ Aucun lien de paiement reçu:', response.data);
+                return { success: false, message: 'Aucun lien de paiement reçu de SING Pay.' };
             }
 
             return { success: true, link: response.data.link };
         } catch (error: any) {
             const message = error.response?.data?.message || error.message || 'Erreur inconnue';
             console.error('❌ Erreur SING Pay:', message);
+            if (error.response) {
+                console.error("Détails de l'erreur:", error.response.data);
+            }
             return { success: false, message };
         }
     }
 
-    async initiateSimple(
+    /**
+     * Récupère une transaction par référence pour vérifier son statut
+     */
+    async getTransactionByReference(
         reference: string,
-        montant: number,
-        numero: string,
-    ): Promise<{
-        success: boolean;
-        reference?: string;
-        status?: string;
-        result?: string;
-        message?: string;
-    }> {
-        const payload = {
-            portefeuille: singPayConfig.walletId,
-            reference: reference,
-            amount: montant,
-            client_msisdn: numero,
-            disbursement: singPayConfig.disbursementId,
-            isTransfer: false,
-        };
+    ): Promise<{ success: boolean; status?: string; raw?: any; message?: string }> {
+        const url = `${this.transactionsUrl}/search/by-reference/${encodeURIComponent(reference)}`;
 
         const headers = {
-            'x-client-id': singPayConfig.clientId,
-            'x-client-secret': singPayConfig.clientSecret,
-            'x-wallet': singPayConfig.walletId,
-            'Content-Type': 'application/json',
-        };
-
-        console.log('📤 Envoi à SING Pay :', {
-            url: this.apiUrl,
-            headers,
-            body: payload,
-        });
-
-        try {
-            const response = await axios.post(`${this.apiUrl}/74/paiement`, payload, { headers });
-            console.log('Réponse : ', response);
-            const transaction = response.data?.transaction;
-            const success = response.data?.status?.success;
-
-            if (!success) {
-                return {
-                    success: false,
-                    message: 'Échec de la transaction ou référence manquante.',
-                };
-            }
-
-            return {
-                success: true,
-                reference: transaction.reference,
-                status: transaction.status,
-                result: transaction.result,
-            };
-        } catch (error: any) {
-            const message = error.response?.data?.message || error.message || 'Erreur inconnue';
-            console.error('❌ Erreur SING Pay (initiateSimple) :', message);
-            return {
-                success: false,
-                message,
-            };
-        }
-    }
-
-    async getTransactionByReference(reference: string): Promise<{ success: boolean; status?: string; raw?: any; message?: string }> {
-        const url = `https://gateway.singpay.ga/v1/transaction/api/search/by-reference/${reference}`;
-
-        const headers = {
+            accept: '*/*',
             'x-client-id': singPayConfig.clientId,
             'x-client-secret': singPayConfig.clientSecret,
             'x-wallet': singPayConfig.walletId,
@@ -120,8 +94,7 @@ export class SingPayService {
 
         try {
             const response = await axios.get(url, { headers });
-
-            console.log('✅ Réponse transaction par référence ');
+            console.log('✅ Transaction récupérée pour référence:', reference);
 
             return {
                 success: true,
@@ -130,7 +103,7 @@ export class SingPayService {
             };
         } catch (error: any) {
             const message = error.response?.data?.message || error.message || 'Erreur inconnue';
-            console.error('❌ Erreur recherche par référence :', message);
+            console.error('❌ Erreur recherche par référence:', message);
             return {
                 success: false,
                 message,

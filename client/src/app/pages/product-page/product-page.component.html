@@ -2,7 +2,7 @@
 <app-loading-spinner [show]="isLoading" />
 <app-cart></app-cart>
 
-<div class="bigger-product-container">
+<div class="bigger-product-container" *ngIf="product; else loadingProduct">
     <div class="product-container">
         <div class="product-left">
             <app-cached-image [src]="getProductImageUrl(product.image)" [alt]="product.title"></app-cached-image>
@@ -139,9 +139,15 @@
                     <i class="fa fa-star filled" [style.width.%]="getStarFill(i, product.averageReview)"></i>
                 </div>
             </ng-container>
-            <span class="note">{{ product.averageReview.toFixed(1).replace('.', ',') }}</span>
+            <span class="note">{{ (product.averageReview || 0).toFixed(1).replace('.', ',') }}</span>
         </div>
     </div>
 </div>
+
+<ng-template #loadingProduct>
+    <div style="text-align: center; padding: 50px; color: #666;">
+        <p>Chargement du produit...</p>
+    </div>
+</ng-template>
 
 <app-footer></app-footer>

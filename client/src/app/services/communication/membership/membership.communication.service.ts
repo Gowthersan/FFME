@@ -27,4 +27,10 @@ export class MembershipCommunicationService {
             montant,
         });
     }
+
+    verifyPayment(id: string): Observable<{ success: boolean; message: string }> {
+        return this.http.get<{ success: boolean; message: string }>(
+            `${this.baseUrl}${ApiEndpoints.MEMBERSHIP}payment/verify/${id}`,
+        );
+    }
 }

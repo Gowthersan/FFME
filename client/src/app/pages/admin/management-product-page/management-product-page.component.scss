@@ -1,48 +1,46 @@
-// Variables
-$primary-color: #1a5f4a;
-$primary-light: #2d8a6b;
-$primary-dark: #0f3d2e;
-$accent-color: #f59e0b;
-$danger-color: #ef4444;
-$success-color: #22c55e;
-$warning-color: #eab308;
-$text-primary: #1f2937;
-$text-secondary: #6b7280;
-$text-muted: #9ca3af;
-$bg-light: #f8fafc;
-$bg-card: #ffffff;
-$border-color: #e5e7eb;
-$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+@use '../../../../styles/admin/variables' as *;
+@use "sass:color";
 
-.products-page {
-    padding: 2rem;
-    background: $bg-light;
-    min-height: 100vh;
+// === LAYOUT ===
+.with-sidebar {
+    margin-left: $sidebar-width;
+
+    @include admin-mobile {
+        margin-left: 0;
+    }
 }
 
-// Header
+.products-page {
+    padding: $admin-spacing-xl;
+    background: $admin-bg;
+    min-height: 100vh;
+
+    @include admin-mobile {
+        padding: $admin-spacing-md;
+    }
+}
+
+// === HEADER ===
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: $admin-spacing-xl;
     flex-wrap: wrap;
-    gap: 1rem;
+    gap: $admin-spacing-md;
 
     .header-content {
         h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: $text-primary;
+            font-size: $admin-font-size-3xl;
+            font-weight: $admin-font-weight-bold;
+            color: $admin-text-primary;
             margin: 0;
         }
 
         .subtitle {
-            color: $text-secondary;
-            margin: 0.25rem 0 0;
-            font-size: 0.95rem;
+            color: $admin-text-secondary;
+            margin: $admin-spacing-xs 0 0;
+            font-size: $admin-font-size-sm;
         }
     }
 }
@@ -50,16 +48,16 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 .btn-add {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    background: $primary-color;
+    gap: $admin-spacing-sm;
+    padding: $admin-spacing-sm $admin-spacing-lg;
+    background: $admin-primary;
     color: white;
     border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 0.95rem;
+    border-radius: $admin-border-radius;
+    font-weight: $admin-font-weight-semibold;
+    font-size: $admin-font-size-sm;
     cursor: pointer;
-    transition: all 0.2s ease;
+    @include admin-transition(all);
 
     svg {
         width: 18px;
@@ -67,40 +65,40 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     &:hover {
-        background: $primary-light;
+        background: $admin-primary-dark;
         transform: translateY(-1px);
-        box-shadow: $shadow-md;
+        box-shadow: 0 4px 12px rgba($admin-primary, 0.3);
     }
 }
 
-// Quick Stats
+// === QUICK STATS ===
 .quick-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.25rem;
-    margin-bottom: 2rem;
+    gap: $admin-spacing-lg;
+    margin-bottom: $admin-spacing-xl;
 }
 
 .stat-card {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1.25rem;
-    background: $bg-card;
-    border-radius: 12px;
-    box-shadow: $shadow-sm;
-    border: 1px solid $border-color;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    gap: $admin-spacing-md;
+    padding: $admin-spacing-lg;
+    background: $admin-surface;
+    border-radius: $admin-border-radius-lg;
+    box-shadow: $admin-shadow-sm;
+    border: 1px solid $admin-border;
+    @include admin-transition(transform, box-shadow);
 
     &:hover {
         transform: translateY(-2px);
-        box-shadow: $shadow-md;
+        box-shadow: $admin-shadow-md;
     }
 
     .stat-icon {
         width: 48px;
         height: 48px;
-        border-radius: 12px;
+        border-radius: $admin-border-radius-lg;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -111,18 +109,18 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         &.products {
-            background: rgba($primary-color, 0.1);
-            color: $primary-color;
+            background: rgba($admin-primary, 0.1);
+            color: $admin-primary;
         }
 
         &.orders {
-            background: rgba(#3b82f6, 0.1);
-            color: #3b82f6;
+            background: rgba($status-info, 0.1);
+            color: $status-info;
         }
 
         &.pending {
-            background: rgba($accent-color, 0.1);
-            color: $accent-color;
+            background: rgba($status-warning, 0.1);
+            color: $status-warning;
         }
     }
 
@@ -131,75 +129,72 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         flex-direction: column;
 
         .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: $text-primary;
+            font-size: $admin-font-size-2xl;
+            font-weight: $admin-font-weight-bold;
+            color: $admin-text-primary;
         }
 
         .stat-label {
-            font-size: 0.85rem;
-            color: $text-secondary;
+            font-size: $admin-font-size-xs;
+            color: $admin-text-secondary;
         }
     }
 }
 
-// Section common
+// === SECTION ===
 .section {
-    background: $bg-card;
-    border-radius: 16px;
-    padding: 1.5rem;
-    margin-bottom: 1.5rem;
-    box-shadow: $shadow-sm;
-    border: 1px solid $border-color;
+    @include admin-card;
+    padding: $admin-spacing-lg;
+    margin-bottom: $admin-spacing-lg;
 
     .section-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 1.5rem;
+        margin-bottom: $admin-spacing-lg;
 
         h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: $text-primary;
+            font-size: $admin-font-size-lg;
+            font-weight: $admin-font-weight-semibold;
+            color: $admin-text-primary;
             margin: 0;
         }
 
         .badge {
-            padding: 0.35rem 0.75rem;
-            background: rgba($primary-color, 0.1);
-            color: $primary-color;
+            padding: $admin-spacing-xs $admin-spacing-sm;
+            background: rgba($admin-primary, 0.1);
+            color: $admin-primary;
             border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 600;
+            font-size: $admin-font-size-xs;
+            font-weight: $admin-font-weight-semibold;
         }
 
         .orders-badge {
-            background: rgba(#3b82f6, 0.1);
-            color: #3b82f6;
+            background: rgba($status-info, 0.1);
+            color: $status-info;
         }
     }
 }
 
-// Products Grid
+// === PRODUCTS GRID ===
 .products-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 1.25rem;
+    gap: $admin-spacing-lg;
 }
 
 .product-card {
-    background: $bg-card;
-    border-radius: 12px;
+    background: $admin-surface;
+    border-radius: $admin-border-radius-lg;
     overflow: hidden;
     border: 2px solid transparent;
     cursor: pointer;
-    transition: all 0.25s ease;
-    box-shadow: $shadow-sm;
+    @include admin-transition(all);
+    box-shadow: $admin-shadow-sm;
 
     &:hover {
-        border-color: rgba($primary-color, 0.3);
-        box-shadow: $shadow-md;
+        border-color: rgba($admin-primary, 0.3);
+        box-shadow: $admin-shadow-md;
 
         .product-overlay {
             opacity: 1;
@@ -207,8 +202,8 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     &.selected {
-        border-color: $primary-color;
-        box-shadow: 0 0 0 3px rgba($primary-color, 0.2);
+        border-color: $admin-primary;
+        box-shadow: 0 0 0 3px rgba($admin-primary, 0.2);
     }
 
     .product-image {
@@ -216,11 +211,11 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         height: 160px;
         overflow: hidden;
 
-        img {
+        img, app-cached-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.3s ease;
+            @include admin-transition(transform);
         }
 
         &:hover img {
@@ -230,17 +225,14 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
     .product-overlay {
         position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        inset: 0;
         background: rgba(0, 0, 0, 0.5);
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.75rem;
+        gap: $admin-spacing-sm;
         opacity: 0;
-        transition: opacity 0.25s ease;
+        @include admin-transition(opacity);
     }
 
     .action-btn {
@@ -252,7 +244,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         align-items: center;
         justify-content: center;
         cursor: pointer;
-        transition: all 0.2s ease;
+        @include admin-transition(all);
 
         svg {
             width: 18px;
@@ -261,20 +253,20 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
         &.edit {
             background: white;
-            color: $primary-color;
+            color: $admin-primary;
 
             &:hover {
-                background: $primary-color;
+                background: $admin-primary;
                 color: white;
             }
         }
 
         &.delete {
             background: white;
-            color: $danger-color;
+            color: $status-danger;
 
             &:hover {
-                background: $danger-color;
+                background: $status-danger;
                 color: white;
             }
         }
@@ -284,40 +276,40 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         position: absolute;
         bottom: 10px;
         left: 10px;
-        padding: 0.3rem 0.6rem;
+        padding: $admin-spacing-xs $admin-spacing-sm;
         background: rgba(255, 255, 255, 0.95);
-        color: $success-color;
-        font-size: 0.75rem;
-        font-weight: 600;
-        border-radius: 6px;
+        color: $status-success;
+        font-size: $admin-font-size-xs;
+        font-weight: $admin-font-weight-semibold;
+        border-radius: $admin-border-radius-sm;
 
         &.low {
-            color: $warning-color;
+            color: $status-warning;
         }
 
         &.out {
-            background: $danger-color;
+            background: $status-danger;
             color: white;
         }
     }
 
     .product-info {
-        padding: 1rem;
+        padding: $admin-spacing-md;
 
         .product-type {
-            font-size: 0.75rem;
-            color: $primary-color;
-            font-weight: 600;
+            font-size: $admin-font-size-xs;
+            color: $admin-primary;
+            font-weight: $admin-font-weight-semibold;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .product-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: $text-primary;
-            margin: 0.35rem 0 0.5rem;
-            line-height: 1.3;
+            font-size: $admin-font-size-base;
+            font-weight: $admin-font-weight-semibold;
+            color: $admin-text-primary;
+            margin: $admin-spacing-xs 0 $admin-spacing-sm;
+            line-height: $admin-line-height-tight;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
@@ -327,39 +319,39 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         .product-meta {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 0.8rem;
-            color: $text-secondary;
+            gap: $admin-spacing-sm;
+            font-size: $admin-font-size-xs;
+            color: $admin-text-secondary;
 
             .rating {
                 display: flex;
                 align-items: center;
-                gap: 0.25rem;
+                gap: $admin-spacing-xs;
 
                 svg {
                     width: 14px;
                     height: 14px;
-                    color: $accent-color;
+                    color: $status-warning;
                 }
             }
         }
     }
 }
 
-// Detail Section
+// === DETAIL SECTION ===
 .detail-section {
     .btn-close-detail {
         width: 36px;
         height: 36px;
         border-radius: 50%;
         border: none;
-        background: $bg-light;
-        color: $text-secondary;
+        background: $admin-bg;
+        color: $admin-text-secondary;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.2s ease;
+        @include admin-transition(all);
 
         svg {
             width: 18px;
@@ -367,7 +359,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         &:hover {
-            background: $danger-color;
+            background: $status-danger;
             color: white;
         }
     }
@@ -376,18 +368,18 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 .detail-content {
     .detail-header {
         display: flex;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
+        gap: $admin-spacing-lg;
+        margin-bottom: $admin-spacing-lg;
         flex-wrap: wrap;
 
         .detail-image {
             width: 200px;
             height: 200px;
-            border-radius: 12px;
+            border-radius: $admin-border-radius-lg;
             overflow: hidden;
             flex-shrink: 0;
 
-            img {
+            img, app-cached-image {
                 width: 100%;
                 height: 100%;
                 object-fit: cover;
@@ -399,24 +391,24 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             min-width: 250px;
 
             .detail-type {
-                font-size: 0.8rem;
-                color: $primary-color;
-                font-weight: 600;
+                font-size: $admin-font-size-xs;
+                color: $admin-primary;
+                font-weight: $admin-font-weight-semibold;
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
             }
 
             h3 {
-                font-size: 1.35rem;
-                font-weight: 600;
-                color: $text-primary;
-                margin: 0.5rem 0;
+                font-size: $admin-font-size-xl;
+                font-weight: $admin-font-weight-semibold;
+                color: $admin-text-primary;
+                margin: $admin-spacing-sm 0;
             }
 
             .detail-description {
-                color: $text-secondary;
-                font-size: 0.95rem;
-                line-height: 1.6;
+                color: $admin-text-secondary;
+                font-size: $admin-font-size-sm;
+                line-height: $admin-line-height-relaxed;
                 margin: 0;
             }
         }
@@ -424,109 +416,109 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
     .detail-stats {
         display: flex;
-        gap: 1.5rem;
-        margin-top: 1rem;
+        gap: $admin-spacing-lg;
+        margin-top: $admin-spacing-md;
 
         .detail-stat {
             display: flex;
             align-items: center;
-            gap: 0.4rem;
-            color: $text-secondary;
-            font-size: 0.9rem;
+            gap: $admin-spacing-xs;
+            color: $admin-text-secondary;
+            font-size: $admin-font-size-sm;
 
             svg {
                 width: 18px;
                 height: 18px;
 
                 &[fill="currentColor"] {
-                    color: $accent-color;
+                    color: $status-warning;
                 }
             }
         }
     }
 }
 
-// Stock Editor
+// === STOCK EDITOR ===
 .stock-editor {
-    background: $bg-light;
-    border-radius: 10px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 1.25rem;
+    background: $admin-bg;
+    border-radius: $admin-border-radius;
+    padding: $admin-spacing-md $admin-spacing-lg;
+    margin-bottom: $admin-spacing-lg;
 
     label {
         display: block;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: $text-secondary;
-        margin-bottom: 0.5rem;
+        font-size: $admin-font-size-xs;
+        font-weight: $admin-font-weight-semibold;
+        color: $admin-text-secondary;
+        margin-bottom: $admin-spacing-sm;
     }
 
     .stock-input-group {
         display: flex;
-        gap: 0.75rem;
+        gap: $admin-spacing-sm;
 
         .stock-input {
             flex: 1;
             max-width: 120px;
-            padding: 0.6rem 0.9rem;
-            border: 1px solid $border-color;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            color: $text-primary;
+            padding: $admin-spacing-sm $admin-spacing-md;
+            border: 1px solid $admin-border;
+            border-radius: $admin-border-radius;
+            font-size: $admin-font-size-base;
+            font-weight: $admin-font-weight-semibold;
+            color: $admin-text-primary;
             text-align: center;
 
             &:focus {
                 outline: none;
-                border-color: $primary-color;
-                box-shadow: 0 0 0 3px rgba($primary-color, 0.1);
+                border-color: $admin-primary;
+                box-shadow: 0 0 0 3px rgba($admin-primary, 0.1);
             }
 
             &:disabled {
-                background: #f3f4f6;
-                color: $text-secondary;
+                background: $admin-bg-secondary;
+                color: $admin-text-secondary;
             }
         }
 
         .btn-stock {
-            padding: 0.6rem 1.25rem;
-            background: $bg-card;
-            border: 1px solid $border-color;
-            border-radius: 8px;
-            font-weight: 600;
-            color: $text-primary;
+            padding: $admin-spacing-sm $admin-spacing-lg;
+            background: $admin-surface;
+            border: 1px solid $admin-border;
+            border-radius: $admin-border-radius;
+            font-weight: $admin-font-weight-semibold;
+            color: $admin-text-primary;
             cursor: pointer;
-            transition: all 0.2s ease;
+            @include admin-transition(all);
 
             &:hover {
-                background: $primary-color;
+                background: $admin-primary;
                 color: white;
-                border-color: $primary-color;
+                border-color: $admin-primary;
             }
 
             &.editing {
-                background: $success-color;
+                background: $status-success;
                 color: white;
-                border-color: $success-color;
+                border-color: $status-success;
             }
         }
     }
 }
 
-// Comments Section
+// === COMMENTS SECTION ===
 .comments-section {
     .btn-toggle-comments {
         display: inline-flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.6rem 1rem;
+        gap: $admin-spacing-sm;
+        padding: $admin-spacing-sm $admin-spacing-md;
         background: transparent;
-        border: 1px solid $border-color;
-        border-radius: 8px;
-        color: $text-secondary;
-        font-weight: 500;
+        border: 1px solid $admin-border;
+        border-radius: $admin-border-radius;
+        color: $admin-text-secondary;
+        font-weight: $admin-font-weight-medium;
         cursor: pointer;
-        transition: all 0.2s ease;
+        @include admin-transition(all);
 
         svg {
             width: 18px;
@@ -534,79 +526,79 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         .comment-count {
-            background: $primary-color;
+            background: $admin-primary;
             color: white;
-            padding: 0.15rem 0.5rem;
+            padding: 2px $admin-spacing-sm;
             border-radius: 10px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            font-size: $admin-font-size-xs;
+            font-weight: $admin-font-weight-semibold;
         }
 
         &:hover {
-            background: $bg-light;
-            border-color: $primary-color;
-            color: $primary-color;
+            background: $admin-bg;
+            border-color: $admin-primary;
+            color: $admin-primary;
         }
     }
 }
 
 .comments-list {
-    margin-top: 1rem;
+    margin-top: $admin-spacing-md;
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: $admin-spacing-sm;
 
     .no-comments {
-        padding: 1.5rem;
+        padding: $admin-spacing-lg;
         text-align: center;
-        color: $text-muted;
-        background: $bg-light;
-        border-radius: 8px;
+        color: $admin-text-muted;
+        background: $admin-bg;
+        border-radius: $admin-border-radius;
     }
 }
 
 .comment-card {
-    background: $bg-light;
-    border-radius: 10px;
-    padding: 1rem;
+    background: $admin-bg;
+    border-radius: $admin-border-radius;
+    padding: $admin-spacing-md;
 
     .comment-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.75rem;
+        margin-bottom: $admin-spacing-sm;
 
         .comment-user {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: $admin-spacing-sm;
 
             .avatar {
                 width: 36px;
                 height: 36px;
                 border-radius: 50%;
-                background: $primary-color;
+                background: $admin-primary;
                 color: white;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-weight: 600;
-                font-size: 0.9rem;
+                font-weight: $admin-font-weight-semibold;
+                font-size: $admin-font-size-sm;
             }
 
             .username {
-                font-weight: 600;
-                color: $text-primary;
+                font-weight: $admin-font-weight-semibold;
+                color: $admin-text-primary;
             }
         }
 
         .comment-rating {
             display: flex;
             align-items: center;
-            gap: 0.25rem;
-            color: $accent-color;
-            font-weight: 600;
-            font-size: 0.9rem;
+            gap: $admin-spacing-xs;
+            color: $status-warning;
+            font-weight: $admin-font-weight-semibold;
+            font-size: $admin-font-size-sm;
 
             svg {
                 width: 16px;
@@ -616,27 +608,27 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     .comment-content {
-        color: $text-secondary;
-        font-size: 0.95rem;
-        line-height: 1.5;
-        margin: 0 0 0.75rem;
+        color: $admin-text-secondary;
+        font-size: $admin-font-size-sm;
+        line-height: $admin-line-height-normal;
+        margin: 0 0 $admin-spacing-sm;
     }
 
     .comment-actions {
         display: flex;
-        gap: 0.5rem;
+        gap: $admin-spacing-sm;
         flex-wrap: wrap;
 
         .validated {
             display: inline-flex;
             align-items: center;
-            gap: 0.3rem;
-            padding: 0.4rem 0.8rem;
-            background: rgba($success-color, 0.1);
-            color: $success-color;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
+            gap: $admin-spacing-xs;
+            padding: $admin-spacing-xs $admin-spacing-sm;
+            background: rgba($status-success, 0.1);
+            color: $status-success;
+            border-radius: $admin-border-radius-sm;
+            font-size: $admin-font-size-xs;
+            font-weight: $admin-font-weight-semibold;
 
             svg {
                 width: 14px;
@@ -646,39 +638,40 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
         .btn-validate,
         .btn-delete-comment {
-            padding: 0.4rem 0.8rem;
+            padding: $admin-spacing-xs $admin-spacing-sm;
             border: none;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            font-weight: 600;
+            border-radius: $admin-border-radius-sm;
+            font-size: $admin-font-size-xs;
+            font-weight: $admin-font-weight-semibold;
             cursor: pointer;
-            transition: all 0.2s ease;
+            @include admin-transition(all);
         }
 
         .btn-validate {
-            background: $success-color;
+            background: $status-success;
             color: white;
 
             &:hover {
-                background: darken($success-color, 10%);
+                background: color.adjust($status-success, $lightness: -10%);
             }
         }
 
         .btn-delete-comment {
-            background: rgba($danger-color, 0.1);
-            color: $danger-color;
+            background: rgba($status-danger, 0.1);
+            color: $status-danger;
 
             &:hover {
-                background: $danger-color;
+                background: $status-danger;
                 color: white;
             }
         }
     }
 }
 
-// Orders Table
+// === ORDERS TABLE ===
 .orders-table-container {
     overflow-x: auto;
+    @include admin-scrollbar;
 }
 
 .orders-table {
@@ -688,29 +681,29 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     thead {
         th {
             text-align: left;
-            padding: 1rem;
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: $text-secondary;
+            padding: $admin-spacing-md;
+            font-size: $admin-font-size-xs;
+            font-weight: $admin-font-weight-semibold;
+            color: $admin-text-secondary;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid $border-color;
-            background: $bg-light;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid $admin-border;
+            background: $admin-bg;
         }
     }
 
     tbody {
         .order-row {
             cursor: pointer;
-            transition: background 0.2s ease;
+            @include admin-transition(background);
 
             &:hover {
-                background: $bg-light;
+                background: $admin-surface-hover;
             }
 
             td {
-                padding: 1rem;
-                border-bottom: 1px solid $border-color;
+                padding: $admin-spacing-md;
+                border-bottom: 1px solid $admin-border;
                 vertical-align: middle;
             }
         }
@@ -720,19 +713,19 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 .client-cell {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: $admin-spacing-sm;
 
     .client-avatar {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background: linear-gradient(135deg, $primary-color, $primary-light);
+        background: linear-gradient(135deg, $admin-primary, $admin-primary-light);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 600;
-        font-size: 0.85rem;
+        font-weight: $admin-font-weight-semibold;
+        font-size: $admin-font-size-xs;
         flex-shrink: 0;
     }
 
@@ -741,13 +734,13 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         flex-direction: column;
 
         .client-name {
-            font-weight: 600;
-            color: $text-primary;
+            font-weight: $admin-font-weight-semibold;
+            color: $admin-text-primary;
         }
 
         .client-id {
-            font-size: 0.8rem;
-            color: $text-muted;
+            font-size: $admin-font-size-xs;
+            color: $admin-text-muted;
         }
     }
 }
@@ -755,14 +748,14 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 .contact-cell {
     .email {
         display: block;
-        color: $text-primary;
-        font-size: 0.9rem;
+        color: $admin-text-primary;
+        font-size: $admin-font-size-sm;
     }
 
     .phone {
         display: block;
-        color: $text-muted;
-        font-size: 0.85rem;
+        color: $admin-text-muted;
+        font-size: $admin-font-size-xs;
     }
 }
 
@@ -770,80 +763,80 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     .products-list {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.35rem;
+        gap: $admin-spacing-xs;
 
         .product-tag {
-            padding: 0.25rem 0.6rem;
-            background: rgba($primary-color, 0.1);
-            color: $primary-color;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: 500;
+            padding: $admin-spacing-xs $admin-spacing-sm;
+            background: rgba($admin-primary, 0.1);
+            color: $admin-primary;
+            border-radius: $admin-border-radius-sm;
+            font-size: $admin-font-size-xs;
+            font-weight: $admin-font-weight-medium;
         }
     }
 }
 
 .date-cell {
-    color: $text-secondary;
-    font-size: 0.9rem;
+    color: $admin-text-secondary;
+    font-size: $admin-font-size-sm;
     white-space: nowrap;
 }
 
 .status-cell {
     .status-badge {
         display: inline-block;
-        padding: 0.4rem 0.8rem;
+        padding: $admin-spacing-xs $admin-spacing-sm;
         border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 600;
+        font-size: $admin-font-size-xs;
+        font-weight: $admin-font-weight-semibold;
 
         &.completed {
-            background: rgba($success-color, 0.1);
-            color: $success-color;
+            background: $status-success-light;
+            color: $status-success-dark;
         }
 
         &.pending {
-            background: rgba($warning-color, 0.1);
-            color: darken($warning-color, 15%);
+            background: $status-warning-light;
+            color: $status-warning-dark;
         }
 
         &.failed {
-            background: rgba($danger-color, 0.1);
-            color: $danger-color;
+            background: $status-danger-light;
+            color: $status-danger-dark;
         }
     }
 }
 
-// Empty State
+// === EMPTY STATE ===
 .empty-state {
     text-align: center;
-    padding: 3rem 2rem;
-    color: $text-muted;
+    padding: $admin-spacing-2xl;
+    color: $admin-text-muted;
 
     svg {
         width: 64px;
         height: 64px;
-        margin-bottom: 1rem;
+        margin-bottom: $admin-spacing-md;
         opacity: 0.5;
     }
 
     h3 {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: $text-secondary;
-        margin: 0 0 0.5rem;
+        font-size: $admin-font-size-lg;
+        font-weight: $admin-font-weight-semibold;
+        color: $admin-text-secondary;
+        margin: 0 0 $admin-spacing-xs;
     }
 
     p {
-        font-size: 0.95rem;
+        font-size: $admin-font-size-sm;
         margin: 0;
     }
 }
 
-// Responsive
-@media (max-width: 1024px) {
+// === RESPONSIVE ===
+@media (max-width: $admin-breakpoint-lg) {
     .products-page {
-        padding: 1.5rem;
+        padding: $admin-spacing-lg;
     }
 
     .detail-content .detail-header {
@@ -854,9 +847,9 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 }
 
-@media (max-width: 768px) {
+@include admin-mobile {
     .products-page {
-        padding: 1rem;
+        padding: $admin-spacing-md;
     }
 
     .page-header {
@@ -887,17 +880,17 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     }
 
     .orders-table {
-        font-size: 0.85rem;
+        font-size: $admin-font-size-xs;
 
         thead th,
         tbody td {
-            padding: 0.75rem 0.5rem;
+            padding: $admin-spacing-sm;
         }
 
         .client-cell {
             flex-direction: column;
             align-items: flex-start;
-            gap: 0.25rem;
+            gap: $admin-spacing-xs;
 
             .client-avatar {
                 display: none;
@@ -913,7 +906,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
     .products-grid {
         grid-template-columns: 1fr 1fr;
-        gap: 0.75rem;
+        gap: $admin-spacing-sm;
     }
 
     .product-card {
@@ -922,10 +915,10 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         .product-info {
-            padding: 0.75rem;
+            padding: $admin-spacing-sm;
 
             .product-title {
-                font-size: 0.9rem;
+                font-size: $admin-font-size-sm;
             }
         }
     }

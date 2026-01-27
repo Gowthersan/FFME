@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminSidebarComponent } from '@app/components/admin/admin-sidebar/admin-sidebar.component';
-import { LoadingSpinnerComponent } from '@app/components/loading-spinner/loading-spinner.component';
+import { DataTableComponent, TableColumn } from '@app/components/admin/data-table/data-table.component';
 import { AdminCommunicationService } from '@app/services/communication/admin/admin.communication.service';
 import { NotificationService } from '@app/services/notification/notification.service';
 import { BaseDestroyableComponent } from '@app/shared/base-destroyable.component';
@@ -13,7 +13,7 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
     selector: 'app-management-donations-page',
     standalone: true,
-    imports: [CommonModule, AdminSidebarComponent, LoadingSpinnerComponent],
+    imports: [CommonModule, AdminSidebarComponent, DataTableComponent],
     templateUrl: './management-donations-page.component.html',
     styleUrl: './management-donations-page.component.scss',
 })
@@ -21,6 +21,16 @@ export class ManagementDonationsPageComponent extends BaseDestroyableComponent i
     donations: Donation[] = [];
     PaymentStatus = PaymentStatus;
     isLoading = false;
+
+    // Configuration des colonnes du tableau
+    columns: TableColumn[] = [
+        { key: 'firstName', label: 'Prénom', sortable: true },
+        { key: 'lastName', label: 'Nom', sortable: true },
+        { key: 'email', label: 'Email', sortable: true },
+        { key: 'amount', label: 'Montant', sortable: true, type: 'currency' },
+        { key: 'registrationDate', label: 'Date', sortable: true, type: 'date' },
+        { key: 'isPaid', label: 'Statut', sortable: true, type: 'status' },
+    ];
 
     constructor(
         private adminService: AdminCommunicationService,
@@ -37,7 +47,8 @@ export class ManagementDonationsPageComponent extends BaseDestroyableComponent i
 
     loadDonations(): void {
         this.isLoading = true;
-        this.adminService.getAllDonations()
+        this.adminService
+            .getAllDonations()
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (data) => {
@@ -53,7 +64,11 @@ export class ManagementDonationsPageComponent extends BaseDestroyableComponent i
             });
     }
 
-    goToDonation(id: string): void {
-        this.router.navigate(['/admin/don', id]);
+    onRowClick(donation: Donation): void {
+        this.router.navigate(['/admin/don', donation.idDonation]);
+    }
+
+    onSelectionChange(selected: Donation[]): void {
+        console.log('Selected donations:', selected);
     }
 }
