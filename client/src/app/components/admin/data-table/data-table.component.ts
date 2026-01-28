@@ -3,6 +3,7 @@ import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from
 import { FormsModule } from '@angular/forms';
 import * as FileSaver from 'file-saver';
 import * as XLSX from 'xlsx';
+import { PaymentStatus } from '@common/enums/payment-status';
 
 export interface TableColumn {
     key: string;
@@ -259,5 +260,35 @@ export class DataTableComponent implements OnChanges {
 
     getCellValue(row: any, column: TableColumn): any {
         return this.getNestedValue(row, column.key);
+    }
+
+    // === STATUS HELPERS ===
+    getStatusClass(status: string): string {
+        switch (status) {
+            case PaymentStatus.COMPLETED:
+            case PaymentStatus.EXEMPTED:
+                return 'admin-badge--success';
+            case PaymentStatus.PENDING:
+                return 'admin-badge--warning';
+            case PaymentStatus.FAILURE:
+                return 'admin-badge--danger';
+            default:
+                return 'admin-badge--danger'; // Par défaut, considéré comme échec
+        }
+    }
+
+    getStatusLabel(status: string): string {
+        switch (status) {
+            case PaymentStatus.COMPLETED:
+                return 'Payé';
+            case PaymentStatus.EXEMPTED:
+                return 'Exempté';
+            case PaymentStatus.PENDING:
+                return 'En attente';
+            case PaymentStatus.FAILURE:
+                return 'Échoué';
+            default:
+                return 'Inconnu';
+        }
     }
 }

@@ -137,11 +137,9 @@
                                 <span class="activity-item__amount">{{ don.amount | number }} F</span>
                                 <span
                                     class="activity-item__status"
-                                    [class.activity-item__status--success]="don.isPaid === 'COMPLETED'"
-                                    [class.activity-item__status--warning]="don.isPaid === 'PENDING'"
-                                    [class.activity-item__status--danger]="don.isPaid === 'FAILURE'"
+                                    [ngClass]="getStatusClass(don.isPaid)"
                                 >
-                                    {{ don.isPaid === 'COMPLETED' ? 'Payé' : don.isPaid === 'PENDING' ? 'En attente' : 'Échoué' }}
+                                    {{ getStatusLabel(don.isPaid) }}
                                 </span>
                             </div>
                         </div>
@@ -181,11 +179,9 @@
                             <div class="activity-item__right">
                                 <span
                                     class="activity-item__status"
-                                    [class.activity-item__status--success]="order.isPaid === 'COMPLETED'"
-                                    [class.activity-item__status--warning]="order.isPaid === 'PENDING'"
-                                    [class.activity-item__status--danger]="order.isPaid === 'FAILURE'"
+                                    [ngClass]="getStatusClass(order.isPaid)"
                                 >
-                                    {{ order.isPaid === 'COMPLETED' ? 'Payé' : order.isPaid === 'PENDING' ? 'En attente' : 'Échoué' }}
+                                    {{ getStatusLabel(order.isPaid) }}
                                 </span>
                             </div>
                         </div>

@@ -53,7 +53,7 @@ services:
       - server_uploads:/app/uploads
       - server_assets:/app/assets
     ports:
-      - "6000:3000"
+      - "5000:3000"
     networks:
       - ffme-network
     healthcheck:

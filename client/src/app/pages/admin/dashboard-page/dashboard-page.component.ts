@@ -15,6 +15,7 @@ import { AdminCommunicationService } from '@app/services/communication/admin/adm
 import { NotificationService } from '@app/services/notification/notification.service';
 import { BaseDestroyableComponent } from '@app/shared/base-destroyable.component';
 import { DashboardStats } from '@common/interfaces/dashboard-stats';
+import { PaymentStatus } from '@common/enums/payment-status';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { takeUntil } from 'rxjs/operators';
 
@@ -239,5 +240,35 @@ export class DashboardPageComponent extends BaseDestroyableComponent implements 
 
     goToOrder(id: string): void {
         this.router.navigate(['/admin/produit', id]);
+    }
+
+    // === STATUS HELPERS ===
+    getStatusClass(status: string): string {
+        switch (status) {
+            case PaymentStatus.COMPLETED:
+            case PaymentStatus.EXEMPTED:
+                return 'activity-item__status--success';
+            case PaymentStatus.PENDING:
+                return 'activity-item__status--warning';
+            case PaymentStatus.FAILURE:
+                return 'activity-item__status--danger';
+            default:
+                return 'activity-item__status--danger';
+        }
+    }
+
+    getStatusLabel(status: string): string {
+        switch (status) {
+            case PaymentStatus.COMPLETED:
+                return 'Payé';
+            case PaymentStatus.EXEMPTED:
+                return 'Exempté';
+            case PaymentStatus.PENDING:
+                return 'En attente';
+            case PaymentStatus.FAILURE:
+                return 'Échoué';
+            default:
+                return 'Inconnu';
+        }
     }
 }

@@ -110,12 +110,9 @@
                             <span
                                 *ngSwitchCase="'status'"
                                 class="admin-badge"
-                                [class.admin-badge--success]="getCellValue(row, column) === 'COMPLETED'"
-                                [class.admin-badge--warning]="getCellValue(row, column) === 'PENDING'"
-                                [class.admin-badge--danger]="getCellValue(row, column) === 'FAILURE'"
+                                [ngClass]="getStatusClass(getCellValue(row, column))"
                             >
-                                {{ getCellValue(row, column) === 'COMPLETED' ? 'Payé' :
-                                   getCellValue(row, column) === 'PENDING' ? 'En attente' : 'Échoué' }}
+                                {{ getStatusLabel(getCellValue(row, column)) }}
                             </span>
 
                             <!-- Currency -->

@@ -64,7 +64,21 @@ services:
       - ./common:/app/common:ro
       - server_uploads_dev:/app/uploads
     ports:
-      - "6000:3000"
+      - "5000:3000"
+    networks:
+      - ffme-network-dev
+
+  # Frontend Client (Angular)
+  client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: ffme-client-dev
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "4200:80"
     networks:
       - ffme-network-dev
 

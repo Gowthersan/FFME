@@ -267,6 +267,7 @@
   }
 
   &__user-name {
+    display: block;
     font-size: $admin-font-size-sm;
     font-weight: $admin-font-weight-medium;
     color: $sidebar-text-active;
@@ -274,9 +275,11 @@
   }
 
   &__user-role {
+    display: block;
     font-size: $admin-font-size-xs;
     color: $sidebar-text;
     @include admin-text-truncate;
+    margin-top: 2px;
   }
 
   // === COLLAPSE BUTTON ===

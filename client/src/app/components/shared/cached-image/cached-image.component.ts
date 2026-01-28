@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { ImageCacheService } from '@app/services/image-cache/image-cache.service';
 
 @Component({
@@ -62,7 +62,7 @@ import { ImageCacheService } from '@app/services/image-cache/image-cache.service
         `,
     ],
 })
-export class CachedImageComponent implements OnInit {
+export class CachedImageComponent implements OnInit, OnChanges {
     @Input() src: string = '';
     @Input() alt: string = '';
     @Output() loaded = new EventEmitter<void>();
@@ -74,7 +74,18 @@ export class CachedImageComponent implements OnInit {
     constructor(private imageCacheService: ImageCacheService) {}
 
     ngOnInit(): void {
+        this.loadImage();
+    }
+
+    ngOnChanges(changes: SimpleChanges): void {
+        if (changes['src'] && !changes['src'].firstChange) {
+            this.loadImage();
+        }
+    }
+
+    private loadImage(): void {
         if (this.src) {
+            this.isLoaded = false; // Reset loading state
             this.cachedUrl = this.imageCacheService.getCachedUrl(this.src);
             this.isLoaded = this.imageCacheService.isLoaded(this.src);
         }

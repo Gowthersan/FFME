@@ -1,7 +1,6 @@
 import { HttpException } from '@app/classes/http.exception';
 import { DateController } from '@app/controllers/date/date.controller';
 import { ExampleController } from '@app/controllers/example/example.controller';
-import { HOST } from '@app/env';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import express from 'express';
@@ -88,14 +87,36 @@ export class Application {
 
     private config(): void {
         // Middlewares configuration
-        // Génère la liste des origines autorisées à partir de l'environnement
-        const allowedOrigins = [HOST.clientUrl.replace(/\/$/, '')]; // Enlève le slash final
-        // En développement, on accepte aussi localhost
-        if (process.env.NODE_ENV !== 'production') {
-            allowedOrigins.push('http://localhost:4200');
+        const isProduction = process.env.NODE_ENV === 'production';
+
+        // Origines autorisées selon l'environnement
+        const allowedOrigins: string[] = [
+            // Production (toujours autorisé)
+            'https://fondationfrancoismeye.ga',
+            'https://www.fondationfrancoismeye.ga',
+            'https://api.fondationfrancoismeye.ga',
+        ];
+
+        // En développement uniquement : autoriser localhost et Docker
+        if (!isProduction) {
+            allowedOrigins.push(
+                // Docker (localhost mappé sur différents ports)
+                'http://localhost',
+                'http://localhost:80',
+                'http://localhost:4200',
+                'http://localhost:5000',
+                // Docker internal networking
+                'http://client',
+                'http://client:80',
+                // Développement local
+                'http://127.0.0.1:4200',
+            );
         }
-        // Docker: accepter les connexions depuis le client nginx
-        allowedOrigins.push('http://localhost', 'http://localhost:80', 'http://client', 'http://client:80');
+
+        // Ajouter CLIENT_URL si défini dans l'environnement
+        if (process.env.CLIENT_URL) {
+            allowedOrigins.push(process.env.CLIENT_URL.replace(/\/$/, ''));
+        }
 
         this.app.use(
             cors({
