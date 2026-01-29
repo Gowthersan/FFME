@@ -245,6 +245,17 @@ export class AdminController {
             }
         });
 
+        this.router.delete('/member/:id', authenticateToken, async (req, res) => {
+            try {
+                const id = req.params.id as string;
+                await this.memberDbService.deleteById(id);
+                return res.status(200).json({ message: 'Membre supprimé avec succès' });
+            } catch (err) {
+                console.error('Erreur suppression membre:', err);
+                return res.status(500).json({ message: 'Erreur lors de la suppression du membre' });
+            }
+        });
+
         this.router.get('/donations', authenticateToken, async (req, res) => {
             try {
                 const allDonations = await this.donationDatabaseService.getAll();

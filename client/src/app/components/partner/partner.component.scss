@@ -50,8 +50,8 @@
         padding: var(--space-lg) 0;
 
         img {
-            height: 100px;
-            max-width: 160px;
+            height: 140px;
+            max-width: 220px;
             object-fit: contain;
             transition: all var(--transition-normal);
             filter: grayscale(100%);
@@ -80,8 +80,8 @@
             gap: var(--space-lg);
 
             img {
-                height: 70px;
-                max-width: 120px;
+                height: 100px;
+                max-width: 160px;
             }
         }
     }
@@ -89,7 +89,7 @@
 
 @media (max-width: 480px) {
     .partenaires .logo-grid img {
-        height: 60px;
-        max-width: 100px;
+        height: 85px;
+        max-width: 135px;
     }
 }

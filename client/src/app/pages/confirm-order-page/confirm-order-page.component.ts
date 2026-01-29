@@ -53,7 +53,6 @@ export class ConfirmOrderPageComponent implements OnInit {
             return;
         }
 
-        console.log('ok');
         const dataToSend = {
             ...this.formCommande.value,
             montant: this.montant,
@@ -62,20 +61,20 @@ export class ConfirmOrderPageComponent implements OnInit {
         this.isLoading = true;
         this.productCommService.postorderPayment(this.confirmId, this.montant, dataToSend).subscribe({
             next: (res) => {
-                if (res.success) {
-                    this.isLoading = false;
-                    console.log(res.message);
+                this.isLoading = false;
+                if (res.success && res.link) {
+                    // Redirection vers le portail de paiement Singpay
+                    window.location.href = res.link;
                 } else {
-                    this.isLoading = false;
                     this.messageErreur = res.message || 'Erreur lors de la commande.';
-                    console.log(this.messageErreur);
+                    console.error('Erreur paiement:', this.messageErreur);
+                    this.cdr.detectChanges();
                 }
-                this.cdr.detectChanges();
             },
             error: (err) => {
                 this.isLoading = false;
-                this.messageErreur = `Erreur de communication avec le serveur : ${err.error?.message}`;
-                console.log(this.messageErreur);
+                this.messageErreur = `Erreur de communication avec le serveur : ${err.error?.message || 'Erreur inconnue'}`;
+                console.error('Erreur serveur:', this.messageErreur);
                 this.cdr.detectChanges();
             },
         });

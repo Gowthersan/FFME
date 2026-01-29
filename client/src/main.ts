@@ -37,6 +37,8 @@ import { SuccessMembershipPageComponent } from '@app/pages/success-membership-pa
 import { FailedMembershipPageComponent } from '@app/pages/failed-membership-page/failed-membership-page.component';
 import { SuccessDonationPageComponent } from '@app/pages/success-donation-page/success-donation-page.component';
 import { FailedDonationPageComponent } from '@app/pages/failed-donation-page/failed-donation-page.component';
+import { SuccessOrderPageComponent } from '@app/pages/success-order-page/success-order-page.component';
+import { FailedOrderPageComponent } from '@app/pages/failed-order-page/failed-order-page.component';
 import { environment } from './environments/environment';
 
 registerLocaleData(localeFr);
@@ -62,6 +64,8 @@ const routes: Routes = [
     { path: 'echec-adhesion/:membershipId', component: FailedMembershipPageComponent },
     { path: 'succes-don/:donId', component: SuccessDonationPageComponent },
     { path: 'echec-don/:donId', component: FailedDonationPageComponent },
+    { path: 'succes-commande/:orderId', component: SuccessOrderPageComponent },
+    { path: 'echec-commande/:orderId', component: FailedOrderPageComponent },
     { path: 'membre', component: MembershipPageComponent },
     { path: 'galerie', component: GalleryPageComponent },
     { path: 'game', component: GamePageComponent },

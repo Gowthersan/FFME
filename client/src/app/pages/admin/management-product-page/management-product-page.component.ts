@@ -204,10 +204,11 @@ export class ManagementProductPageComponent extends BaseDestroyableComponent imp
     }
 
     validateComment(comment: ProductComment): void {
-        if (!this.selectedProduct?._id || !comment.idComment) return;
+        if (!this.selectedProduct?._id || !comment._id) return;
 
         this.isLoading = true;
-        this.adminProductService.patchProductComment(this.selectedProduct._id, comment._id, 'validate')
+        const commentId = typeof comment._id === 'string' ? comment._id : comment._id.toString();
+        this.adminProductService.patchProductComment(this.selectedProduct._id, commentId, 'validate')
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (updatedProduct: Product | null) => {
@@ -227,13 +228,14 @@ export class ManagementProductPageComponent extends BaseDestroyableComponent imp
     }
 
     deleteComment(comment: ProductComment): void {
-        if (!this.selectedProduct?._id || !comment.idComment) return;
+        if (!this.selectedProduct?._id || !comment._id) return;
 
         const confirmDelete = confirm(`Supprimer le commentaire de ${comment.userName} ?`);
         if (!confirmDelete) return;
 
         this.isLoading = true;
-        this.adminProductService.patchProductComment(this.selectedProduct._id, comment._id, 'delete')
+        const commentId = typeof comment._id === 'string' ? comment._id : comment._id.toString();
+        this.adminProductService.patchProductComment(this.selectedProduct._id, commentId, 'delete')
             .pipe(takeUntil(this.destroy$))
             .subscribe({
                 next: (updatedProduct) => {

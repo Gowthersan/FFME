@@ -7,7 +7,21 @@ export class TransactionDatabaseService {
     async create(transaction: Transaction): Promise<Transaction> {
         const doc = new TransactionModel(transaction);
         await doc.save();
-        console.log(`✅ Transaction créée: ${transaction.id} (${transaction.type})`);
+
+        // Log détaillé de la création
+        const typeLabel = transaction.type === 'donation' ? 'Don' : transaction.type === 'membership' ? 'Adhésion' : 'Commande';
+        console.log('\n' + '─'.repeat(60));
+        console.log(`📝 NOUVELLE TRANSACTION ENREGISTRÉE`);
+        console.log('─'.repeat(60));
+        console.log(`   Type        : ${typeLabel}`);
+        console.log(`   Référence   : ${transaction.reference}`);
+        console.log(`   Montant     : ${transaction.amount} FCFA`);
+        console.log(`   Payeur      : ${transaction.payerFirstName} ${transaction.payerLastName}`);
+        console.log(`   Email       : ${transaction.payerEmail}`);
+        console.log(`   Téléphone   : ${transaction.payerPhone}`);
+        console.log(`   Statut      : 🔄 ${transaction.status}`);
+        console.log('─'.repeat(60) + '\n');
+
         return transaction;
     }
 
@@ -52,7 +66,9 @@ export class TransactionDatabaseService {
         const updated = await TransactionModel.findOneAndUpdate({ reference }, { $set: updateData }, { new: true }).lean();
 
         if (updated) {
-            console.log(`✅ Transaction ${reference} mise à jour: ${status}`);
+            const statusEmoji =
+                status === 'completed' ? '✅' : status === 'failed' ? '❌' : status === 'timeout' ? '⏰' : status === 'cancelled' ? '🚫' : '⏳';
+            console.log(`${statusEmoji} Transaction ${reference} → ${status.toUpperCase()}`);
         }
 
         return updated;

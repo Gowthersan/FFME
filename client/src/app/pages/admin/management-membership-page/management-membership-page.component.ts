@@ -8,6 +8,7 @@ import { NotificationService } from '@app/services/notification/notification.ser
 import { BaseDestroyableComponent } from '@app/shared/base-destroyable.component';
 import { PaymentStatus } from '@common/enums/payment-status';
 import { Member } from '@common/interfaces/member';
+import { forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
@@ -20,6 +21,7 @@ import { takeUntil } from 'rxjs/operators';
 export class ManagementMembershipPageComponent extends BaseDestroyableComponent implements OnInit {
     PaymentStatus = PaymentStatus;
     members: Member[] = [];
+    selectedMembers: Member[] = [];
     isLoading = false;
 
     // Configuration des colonnes du tableau
@@ -74,6 +76,44 @@ export class ManagementMembershipPageComponent extends BaseDestroyableComponent 
     }
 
     onSelectionChange(selected: Member[]): void {
-        console.log('Selected members:', selected);
+        this.selectedMembers = selected;
+    }
+
+    deleteSelectedMembers(): void {
+        if (this.selectedMembers.length === 0) {
+            this.notificationService.warning('Aucun membre sélectionné.');
+            return;
+        }
+
+        const count = this.selectedMembers.length;
+        const confirmDelete = confirm(
+            `Êtes-vous sûr de vouloir supprimer ${count} membre${count > 1 ? 's' : ''} ?`
+        );
+
+        if (!confirmDelete) return;
+
+        this.isLoading = true;
+
+        // Supprimer tous les membres sélectionnés en parallèle
+        const deleteRequests = this.selectedMembers.map((member) =>
+            this.adminService.deleteMember(member.idMember).pipe(takeUntil(this.destroy$))
+        );
+
+        // Utiliser forkJoin pour attendre que toutes les suppressions soient terminées
+        forkJoin(deleteRequests).subscribe({
+            next: () => {
+                this.isLoading = false;
+                this.notificationService.success(
+                    `${count} membre${count > 1 ? 's' : ''} supprimé${count > 1 ? 's' : ''} avec succès.`
+                );
+                this.selectedMembers = [];
+                this.loadMembers();
+            },
+            error: () => {
+                this.isLoading = false;
+                this.notificationService.error('Erreur lors de la suppression des membres.');
+                this.cdr.detectChanges();
+            },
+        });
     }
 }

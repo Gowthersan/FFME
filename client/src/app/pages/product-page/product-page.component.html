@@ -88,13 +88,11 @@
                         <span class="note ms-2">{{ newComment.review }}/4</span>
                     </div>
                 </div>
-                <!--
-                <ng-container *ngIf="message.text">
+                <ng-container *ngIf="message?.text">
                     <div class="feedback-message" [ngClass]="message.type">
                         {{ message.text }}
                     </div>
-                </ng-container>                
--->
+                </ng-container>
 
                 <button class="btn btn-envoyer" (click)="submitComment()">Envoyer</button>
             </div>

@@ -62,7 +62,9 @@ export class ProductCommunicationService {
         return this.http.get<any[]>(`${this.baseUrl}${ApiEndpoints.PRODUCT}${productId}/comments/`);
     }
 
-    getVerifyPayment(reference: string): Observable<any> {
-        return this.http.get(`${this.baseUrl}${ApiEndpoints.PRODUCT}/payment/status/${reference}`);
+    verifyPayment(reference: string): Observable<{ success: boolean; message: string }> {
+        return this.http.get<{ success: boolean; message: string }>(
+            `${this.baseUrl}${ApiEndpoints.PRODUCT}payment/verify/${reference}`,
+        );
     }
 }

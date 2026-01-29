@@ -67,6 +67,10 @@ export class AdminCommunicationService {
         return this.http.patch<{ message: string }>(`${this.baseUrl}member/${id}/validation`, { isValidated }, { headers: this.getAuthHeaders() });
     }
 
+    deleteMember(id: string): Observable<{ message: string }> {
+        return this.http.delete<{ message: string }>(`${this.baseUrl}member/${id}`, { headers: this.getAuthHeaders() });
+    }
+
     // Donation
     getAllDonations(): Observable<Donation[]> {
         return this.http.get<Donation[]>(`${this.baseUrl}donations`, {

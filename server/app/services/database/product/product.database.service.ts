@@ -87,12 +87,20 @@ export class ProductDatabaseService {
             userName: commentData.username,
             content: commentData.content,
             review: commentData.review,
-            isChecked: false,
+            isChecked: true, // Visible immédiatement, l'admin peut supprimer si besoin
             _id: new Types.ObjectId(),
             idComment: 'CMD-' + Date.now().toString(36) + '-' + Math.random().toString(36).substring(2, 8).toUpperCase(),
         };
 
         product.comments.push(newComment);
+
+        // Recalculer la moyenne avec le nouveau commentaire
+        const checkedComments = product.comments.filter((c) => c.isChecked);
+        if (checkedComments.length > 0) {
+            const sum = checkedComments.reduce((total, c) => total + (c.review ?? 0), 0);
+            product.averageReview = parseFloat((sum / checkedComments.length).toFixed(2));
+        }
+
         await product.save();
 
         return newComment;

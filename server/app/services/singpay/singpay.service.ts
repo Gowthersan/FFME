@@ -52,14 +52,27 @@ export class SingPayService {
             'Content-Type': 'application/json',
         };
 
-        console.log('📤 Envoi à SING Pay Gateway :', {
-            url: this.apiUrl,
-            body: payload,
-        });
+        // Log détaillé de l'initiation du paiement
+        console.log('\n' + '═'.repeat(70));
+        console.log('💳 INITIATION PAIEMENT SINGPAY');
+        console.log('═'.repeat(70));
+        console.log(`   Type        : ${type.toUpperCase()}`);
+        console.log(`   Référence   : ${reference}`);
+        console.log(`   Montant     : ${montant} FCFA`);
+        console.log(`   Redirect OK : ${redirectUrls[type].success}`);
+        console.log(`   Redirect KO : ${redirectUrls[type].error}`);
+        console.log('─'.repeat(70));
 
         try {
             const response = await axios.post(this.apiUrl, payload, { headers });
-            console.log('✅ Réponse SING Pay :', response.data);
+
+            console.log('✅ RÉPONSE SINGPAY:');
+            console.log(`   Statut      : Succès`);
+            console.log(`   Lien        : ${response.data?.link || 'Non reçu'}`);
+            if (response.data?.transactionId) {
+                console.log(`   Transaction : ${response.data.transactionId}`);
+            }
+            console.log('═'.repeat(70) + '\n');
 
             if (!response.data?.link) {
                 console.error('❌ Aucun lien de paiement reçu:', response.data);
@@ -69,10 +82,12 @@ export class SingPayService {
             return { success: true, link: response.data.link };
         } catch (error: any) {
             const message = error.response?.data?.message || error.message || 'Erreur inconnue';
-            console.error('❌ Erreur SING Pay:', message);
-            if (error.response) {
-                console.error("Détails de l'erreur:", error.response.data);
+            console.log('❌ ERREUR SINGPAY:');
+            console.log(`   Message     : ${message}`);
+            if (error.response?.data) {
+                console.log(`   Détails     : ${JSON.stringify(error.response.data)}`);
             }
+            console.log('═'.repeat(70) + '\n');
             return { success: false, message };
         }
     }
@@ -94,7 +109,35 @@ export class SingPayService {
 
         try {
             const response = await axios.get(url, { headers });
-            console.log('✅ Transaction récupérée pour référence:', reference);
+
+            // Log détaillé de la vérification
+            console.log('\n' + '═'.repeat(70));
+            console.log('🔍 VÉRIFICATION TRANSACTION SINGPAY');
+            console.log('═'.repeat(70));
+            console.log(`   Référence   : ${reference}`);
+            console.log(`   Statut      : ${response.data?.status || 'inconnu'}`);
+            console.log(`   Résultat    : ${response.data?.result || 'N/A'}`);
+            if (response.data?.amount) {
+                console.log(`   Montant     : ${response.data.amount} FCFA`);
+            }
+            if (response.data?.paidAt) {
+                console.log(`   Payé le     : ${response.data.paidAt}`);
+            }
+            if (response.data?.transactionId) {
+                console.log(`   ID Singpay  : ${response.data.transactionId}`);
+            }
+
+            // Emoji selon le statut
+            const statusEmoji =
+                response.data?.status === 'Disbursement' || response.data?.result === 'Success'
+                    ? '✅'
+                    : response.data?.result === 'TimeOutError'
+                      ? '⏰'
+                      : response.data?.result === 'Failed'
+                        ? '❌'
+                        : '⏳';
+            console.log(`   État final  : ${statusEmoji} ${response.data?.status || 'En attente'}`);
+            console.log('═'.repeat(70) + '\n');
 
             return {
                 success: true,
@@ -103,7 +146,12 @@ export class SingPayService {
             };
         } catch (error: any) {
             const message = error.response?.data?.message || error.message || 'Erreur inconnue';
-            console.error('❌ Erreur recherche par référence:', message);
+            console.log('\n' + '═'.repeat(70));
+            console.log('❌ ERREUR VÉRIFICATION SINGPAY');
+            console.log('═'.repeat(70));
+            console.log(`   Référence   : ${reference}`);
+            console.log(`   Erreur      : ${message}`);
+            console.log('═'.repeat(70) + '\n');
             return {
                 success: false,
                 message,

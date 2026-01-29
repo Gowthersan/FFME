@@ -1,0 +1,204 @@
+name: Deploy FFME to Production Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  SERVER_HOST: ${{ secrets.SERVER_HOST }}
+  SERVER_PORT: ${{ secrets.SERVER_PORT }}
+  SERVER_USER: ${{ secrets.SERVER_USER }}
+  SERVER_PATH: ${{ secrets.SERVER_PATH }}
+  APP_FOLDER: ffme
+  DEPLOY_PATH: ${{ secrets.SERVER_PATH }}/ffme
+
+jobs:
+  deploy:
+    name: Deploy FFME Application
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH Key
+        env:
+          SSH_PASSPHRASE: ${{ secrets.PASSPHRASE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p ${{ env.SERVER_PORT }} ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+          # Install sshpass and add key with passphrase
+          sudo apt-get update && sudo apt-get install -y sshpass expect
+
+          # Start ssh-agent and export for subsequent steps
+          eval $(ssh-agent -s)
+          echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+          echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+
+          # Add key with passphrase using expect
+          expect << 'EXPECT_EOF'
+          spawn ssh-add /home/runner/.ssh/id_rsa
+          expect "Enter passphrase"
+          send "$env(SSH_PASSPHRASE)\r"
+          expect eof
+          EXPECT_EOF
+
+          echo "SSH key added successfully"
+          ssh-add -l
+
+      - name: Create deployment directory
+        run: |
+          ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
+            ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
+            "mkdir -p ${{ env.DEPLOY_PATH }}"
+
+      - name: Sync files to server
+        run: |
+          rsync -avz --delete \
+            --exclude '.git' \
+            --exclude 'node_modules' \
+            --exclude 'dist' \
+            --exclude '.angular' \
+            --exclude '.env' \
+            --exclude '.env.local' \
+            --exclude 'coverage' \
+            --exclude '*.log' \
+            -e "ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no" \
+            ./ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
+
+      - name: Create environment file
+        run: |
+          ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
+            ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
+            "cat > ${{ env.DEPLOY_PATH }}/.env << 'ENVEOF'
+          # MongoDB
+          MONGO_ROOT_USER=${{ secrets.MONGO_ROOT_USER }}
+          MONGO_ROOT_PASSWORD=${{ secrets.MONGO_ROOT_PASSWORD }}
+          MONGO_URI=${{ secrets.MONGO_URI }}
+          DB_URL=${{ secrets.DB_URL }}
+
+          # JWT
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+
+          # FTP
+          FTP_HOST=${{ secrets.FTP_HOST }}
+          FTP_PORT=${{ secrets.FTP_PORT }}
+          FTP_USER=${{ secrets.FTP_USER }}
+          FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}
+
+          # SMTP Mail
+          SMTP_HOST=${{ secrets.SMTP_HOST }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          SMTP_USER=${{ secrets.SMTP_USER }}
+          SMTP_PASS=${{ secrets.SMTP_PASS }}
+
+          # Mail API
+          MAIL_API_KEY=${{ secrets.MAIL_API_KEY }}
+
+          # Singpay
+          SINGPAY_CLIENT_ID=${{ secrets.SINGPAY_CLIENT_ID }}
+          SINGPAY_CLIENT_SECRET=${{ secrets.SINGPAY_CLIENT_SECRET }}
+          SINGPAY_WALLET_ID=${{ secrets.SINGPAY_WALLET_ID }}
+          SINGPAY_DISBURSEMENT_ID=${{ secrets.SINGPAY_DISBURSEMENT_ID }}
+          ENVEOF"
+
+      - name: Build and deploy Docker containers
+        run: |
+          ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
+            ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
+            "cd ${{ env.DEPLOY_PATH }} && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            echo '🛑 Stopping existing containers...' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            docker compose down --remove-orphans 2>/dev/null || true && \
+            docker stop ffme-client ffme-server ffme-mongodb 2>/dev/null || true && \
+            docker rm ffme-client ffme-server ffme-mongodb 2>/dev/null || true && \
+            echo '' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            echo '🗑️  Removing old images...' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            docker rmi \$(docker images -q '*ffme*' 2>/dev/null) 2>/dev/null || true && \
+            echo '' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            echo '🔨 Building Docker images...' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            docker compose build --no-cache && \
+            echo '' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            echo '🚀 Starting application...' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            docker compose up -d --force-recreate && \
+            echo '' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            echo '🧹 Cleaning up unused images...' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            docker image prune -f && \
+            echo '' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            echo '📊 Current status:' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep ffme || echo '⚠️  Warning: Containers may not be running'"
+
+      - name: Verify deployment
+        run: |
+          echo "⏳ Waiting for application to start..."
+          sleep 30
+          ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
+            ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
+            "echo '══════════════════════════════════════════════════════════════' && \
+            echo '🔍 Verifying deployment...' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+
+            # Check MongoDB
+            if docker ps | grep -q ffme-mongodb; then
+              echo '✅ MongoDB: Running'
+            else
+              echo '❌ MongoDB: NOT running'
+              docker logs ffme-mongodb --tail 20 2>/dev/null || true
+            fi && \
+
+            # Check Server
+            if docker ps | grep -q ffme-server; then
+              echo '✅ Server: Running'
+            else
+              echo '❌ Server: NOT running'
+              docker logs ffme-server --tail 20 2>/dev/null || true
+            fi && \
+
+            # Check Client
+            if docker ps | grep -q ffme-client; then
+              echo '✅ Client: Running'
+            else
+              echo '❌ Client: NOT running'
+              docker logs ffme-client --tail 20 2>/dev/null || true
+            fi && \
+
+            echo '' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            echo '📋 Server logs (last 15 lines):' && \
+            echo '══════════════════════════════════════════════════════════════' && \
+            docker logs ffme-server --tail 15 2>/dev/null || echo 'No logs available' && \
+
+            # Final status check
+            if docker ps | grep -q ffme-client && docker ps | grep -q ffme-server; then
+              echo '' && \
+              echo '══════════════════════════════════════════════════════════════' && \
+              echo '🎉 DEPLOYMENT SUCCESSFUL!' && \
+              echo '══════════════════════════════════════════════════════════════'
+            else
+              echo '' && \
+              echo '══════════════════════════════════════════════════════════════' && \
+              echo '❌ DEPLOYMENT FAILED - Some containers are not running' && \
+              echo '══════════════════════════════════════════════════════════════' && \
+              exit 1
+            fi"
+
+      - name: Cleanup SSH agent
+        if: always()
+        run: |
+          ssh-agent -k 2>/dev/null || true
