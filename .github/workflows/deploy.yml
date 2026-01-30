@@ -24,26 +24,32 @@ jobs:
               uses: actions/checkout@v4
 
             - name: Setup SSH Key
-              uses: shimataro/ssh-key-action@v2
-              with:
-                  key: ${{ secrets.PRIVATE_KEY }}
-                  name: id_rsa
-                  known_hosts: unnecessary
-                  if_key_exists: replace
-
-            - name: Decrypt SSH key (if passphrase protected)
               env:
                   SSH_PASSPHRASE: ${{ secrets.PASSPHRASE_KEY }}
               run: |
-                  if [ -n "$SSH_PASSPHRASE" ]; then
-                    # Decrypt key by removing passphrase for this session
-                    ssh-keygen -p -P "$SSH_PASSPHRASE" -N "" -f ~/.ssh/id_rsa
-                    echo "SSH key decrypted successfully"
-                  fi
-
-            - name: Add server to known hosts
-              run: |
+                  mkdir -p ~/.ssh
+                  echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
+                  chmod 600 ~/.ssh/id_rsa
                   ssh-keyscan -p ${{ env.SERVER_PORT }} ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+
+                  # Install sshpass and add key with passphrase
+                  sudo apt-get update && sudo apt-get install -y sshpass expect
+
+                  # Start ssh-agent and export for subsequent steps
+                  eval $(ssh-agent -s)
+                  echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
+                  echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+
+                  # Add key with passphrase using expect
+                  expect << 'EXPECT_EOF'
+                  spawn ssh-add /home/runner/.ssh/id_rsa
+                  expect "Enter passphrase"
+                  send "$env(SSH_PASSPHRASE)\r"
+                  expect eof
+                  EXPECT_EOF
+
+                  echo "SSH key added successfully"
+                  ssh-add -l
 
             - name: Create deployment directory
               run: |
