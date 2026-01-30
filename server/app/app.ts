@@ -118,15 +118,22 @@ export class Application {
             allowedOrigins.push(process.env.CLIENT_URL.replace(/\/$/, ''));
         }
 
+        // CORS doit être configuré en premier pour gérer les erreurs aussi
         this.app.use(
             cors({
                 origin: allowedOrigins,
                 credentials: true,
+                methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+                allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
             }),
         );
+
+
         this.app.use(cookieParser());
-        this.app.use(express.json());
-        this.app.use(express.urlencoded({ extended: true }));
+
+        // Augmenter les limites pour les uploads (fichiers en base64)
+        this.app.use(express.json({ limit: '50mb' }));
+        this.app.use(express.urlencoded({ extended: true, limit: '50mb' }));
     }
 
     private errorHandling(): void {
