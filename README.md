@@ -27,29 +27,58 @@ FFME/
 
 - Node.js 18+
 - MongoDB
-- npm ou pnpm
+- pnpm
+
+### Installation de pnpm
+
+```bash
+# Via npm (méthode recommandée)
+npm install -g pnpm
+
+# Via Homebrew (macOS)
+brew install pnpm
+
+# Via script d'installation (Linux/macOS)
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+
+# Via PowerShell (Windows)
+iwr https://get.pnpm.io/install.ps1 -useb | iex
+```
+
+Vérifier l'installation :
+```bash
+pnpm --version
+```
 
 ### Installation des dépendances
 
 ```bash
 # Client
 cd client
-npm install
+pnpm install
 
 # Serveur
 cd server
-npm install
+pnpm install
 ```
 
 ### Configuration
 
-Créer un fichier `.env` dans le dossier `server/` :
+Créer un fichier `.env` à la racine du projet :
 
 ```env
-PORT=3000
-DB_URL=mongodb://localhost:27017/ffme
 JWT_SECRET=your-secret-key
+DB_URL=mongodb://localhost:27017/ffme
+MONGO_URI=mongodb://localhost:27017/ffme
 MAIL_API_KEY=your-mail-api-key
+FTP_HOST=xxx
+FTP_PORT=22
+FTP_USER=xxx
+FTP_PASSWORD=xxx
+SMTP_HOST=xxx
+SMTP_PORT=465
+SMTP_USER=xxx
+SMTP_PASS=xxx
 
 # Singpay (ne pas modifier en production)
 SINGPAY_CLIENT_ID=xxx
@@ -60,16 +89,84 @@ SINGPAY_DISBURSEMENT_ID=xxx
 
 ## Lancement
 
+### Mode développement (sans Docker)
+
 ```bash
 # Terminal 1 - Backend
 cd server
-npm start
+pnpm start
 # Serveur disponible sur http://localhost:3000
 
 # Terminal 2 - Frontend
 cd client
-npm start
+pnpm start
 # Site disponible sur http://localhost:4200
+```
+
+### Mode développement (avec Docker)
+
+```bash
+docker-compose -f docker-compose.dev.yml up -d --build
+```
+
+| Service | URL |
+|---------|-----|
+| API Backend | http://localhost:5000 |
+| Swagger Docs | http://localhost:5000/api/docs |
+| MongoDB | localhost:27017 |
+| Mongo Express (UI BDD) | http://localhost:8081 |
+
+### Mode production (Docker)
+
+```bash
+docker-compose up -d --build
+```
+
+| Service | URL |
+|---------|-----|
+| Client (Angular) | http://localhost:4200 |
+| API Backend | http://localhost:5000 |
+
+### Commandes Docker utiles
+
+```bash
+# Logs en temps réel (tous les services)
+docker-compose logs -f
+
+# Logs d'un service spécifique
+docker-compose logs -f server
+docker-compose logs -f client
+
+# État des conteneurs
+docker-compose ps
+
+# Arrêter tous les services
+docker-compose down
+
+# Arrêter + supprimer volumes (reset BDD)
+docker-compose down -v
+
+# Reconstruire un service spécifique
+docker-compose up -d --build server
+docker-compose up -d --build client
+
+# Entrer dans un conteneur
+docker exec -it ffme-server sh
+docker exec -it ffme-mongodb mongosh
+```
+
+### Prérequis Docker
+
+```bash
+# Vérifier que Docker est installé
+docker --version
+docker-compose --version
+
+# Installer Docker (macOS)
+brew install --cask docker
+
+# Installer Docker (Ubuntu/Debian)
+curl -fsSL https://get.docker.com | sh
 ```
 
 ## Fonctionnalités principales
@@ -152,6 +249,37 @@ Au démarrage du serveur, un service vérifie automatiquement les transactions e
 | PATCH | `/api/admin/member/:id/status` | Modifier statut membre |
 | PATCH | `/api/admin/donation/:id/status` | Modifier statut don |
 
+### Exemples de requêtes curl
+
+```bash
+# Vérifier que l'API est en ligne
+curl http://localhost:3000/api/health
+
+# Connexion admin (récupérer le token)
+curl -X POST http://localhost:3000/api/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "admin@example.com", "password": "your-password"}'
+
+# Récupérer les statistiques (avec token)
+curl http://localhost:3000/api/admin/stats \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Liste des membres (avec token)
+curl http://localhost:3000/api/admin/members \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Liste des dons (avec token)
+curl http://localhost:3000/api/admin/donations \
+  -H "Authorization: Bearer YOUR_TOKEN"
+
+# Statistiques des transactions
+curl http://localhost:3000/api/webhook/stats
+
+# Forcer la réconciliation des paiements (admin)
+curl -X POST http://localhost:3000/api/webhook/reconcile \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
 ## Structure des données
 
 ### Transaction
@@ -212,6 +340,26 @@ interface Member {
 }
 ```
 
+## Accès Administration
+
+### Compte admin par défaut
+
+L'accès à l'interface d'administration se fait via `/admin/login`.
+
+Les identifiants admin sont configurés dans le backend. Pour les modifier, voir le fichier de configuration du serveur.
+
+### Interface admin
+
+| Page | Route | Description |
+|------|-------|-------------|
+| Connexion | `/admin/login` | Page de connexion |
+| Dashboard | `/admin/dashboard` | Statistiques générales |
+| Membres | `/admin/members` | Gestion des adhésions |
+| Dons | `/admin/donations` | Gestion des dons |
+| Actualités | `/admin/news` | Gestion des articles |
+| Galerie | `/admin/gallery` | Gestion des photos |
+| Produits | `/admin/products` | Gestion de la boutique |
+
 ## Déploiement
 
 ### Production
@@ -219,11 +367,11 @@ interface Member {
 ```bash
 # Build client
 cd client
-npm run build
+pnpm run build
 
 # Build serveur
 cd server
-npm run build
+pnpm run build
 ```
 
 ### Variables d'environnement production
