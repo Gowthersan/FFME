@@ -59,17 +59,28 @@ jobs:
 
             - name: Sync files to server
               run: |
-                  rsync -avz --delete \
-                    --exclude '.git' \
-                    --exclude 'node_modules' \
-                    --exclude 'dist' \
-                    --exclude '.angular' \
-                    --exclude '.env' \
-                    --exclude '.env.local' \
-                    --exclude 'coverage' \
-                    --exclude '*.log' \
-                    -e "ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no" \
-                    ./ ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
+                  # Create archive excluding unnecessary files
+                  tar --exclude='.git' \
+                      --exclude='node_modules' \
+                      --exclude='dist' \
+                      --exclude='.angular' \
+                      --exclude='.env' \
+                      --exclude='.env.local' \
+                      --exclude='coverage' \
+                      --exclude='*.log' \
+                      -czf deploy.tar.gz .
+
+                  # Upload archive to server
+                  scp -P ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
+                    deploy.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
+
+                  # Extract on server and cleanup
+                  ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
+                    ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
+                    "cd ${{ env.DEPLOY_PATH }} && tar -xzf deploy.tar.gz && rm deploy.tar.gz"
+
+                  # Cleanup local archive
+                  rm deploy.tar.gz
 
             - name: Create environment file
               run: |
