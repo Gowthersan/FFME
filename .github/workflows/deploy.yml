@@ -43,15 +43,20 @@ jobs:
                       cd "$DEPLOY_PATH"
 
                       # Clonage ou mise à jour du repo
-                      if [ ! -d .git ]; then
-                          echo "Premier déploiement - Clonage du repo..."
-                          git clone --depth=1 --branch main "$GIT_REPO" .
-                      else
-                          echo "Mise à jour du repo existant..."
+                      if [ -d .git ]; then
+                          echo "Repo git existant - Mise à jour..."
+                          git remote set-url origin "$GIT_REPO" 2>/dev/null || git remote add origin "$GIT_REPO"
                           git fetch origin --prune
                           git reset --hard HEAD
                           git clean -fd
                           git checkout -B main origin/main
+                      elif [ "$(ls -A 2>/dev/null)" ]; then
+                          echo "Répertoire non vide sans git - Nettoyage et clonage..."
+                          rm -rf ..?* .[!.]* * 2>/dev/null || true
+                          git clone --depth=1 --branch main "$GIT_REPO" .
+                      else
+                          echo "Premier déploiement - Clonage du repo..."
+                          git clone --depth=1 --branch main "$GIT_REPO" .
                       fi
 
                       echo "Dernier commit: $(git log -1 --oneline)"
