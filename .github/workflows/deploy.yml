@@ -1,4 +1,10 @@
-name: Deploy FFME to Production Server
+# ========================================
+# DÉPLOIEMENT FFME - PRODUCTION (Docker)
+# ========================================
+# Déclenché automatiquement sur push vers main
+# Build et déploie les containers Docker sur le serveur
+
+name: Deploy FFME to Production
 
 on:
     push:
@@ -6,175 +12,176 @@ on:
             - main
     workflow_dispatch:
 
-env:
-    SERVER_HOST: ${{ secrets.SERVER_HOST }}
-    SERVER_PORT: ${{ secrets.SERVER_PORT }}
-    SERVER_USER: ${{ secrets.SERVER_USER }}
-    SERVER_PATH: ${{ secrets.SERVER_PATH }}
-    APP_FOLDER: ffme
-    DEPLOY_PATH: ${{ secrets.SERVER_PATH }}/ffme
-
 jobs:
     deploy:
-        name: Deploy FFME Application
+        name: Build & Deploy Docker
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+            - name: Deploy via SSH
+              uses: appleboy/ssh-action@v1
+              with:
+                  host: ${{ secrets.SERVER_HOST }}
+                  username: ${{ secrets.SERVER_USER }}
+                  key: ${{ secrets.PRIVATE_KEY }}
+                  passphrase: ${{ secrets.PASSPHRASE_KEY }}
+                  port: ${{ secrets.SERVER_PORT }}
+                  command_timeout: 30m
+                  script: |
+                      set -e
+                      echo "=========================================="
+                      echo "=== DÉPLOIEMENT FFME - PRODUCTION      ==="
+                      echo "=========================================="
 
-            - name: Setup SSH Key
-              env:
-                  SSH_PASSPHRASE: ${{ secrets.PASSPHRASE_KEY }}
-              run: |
-                  mkdir -p ~/.ssh
-                  echo "${{ secrets.PRIVATE_KEY }}" > ~/.ssh/id_rsa
-                  chmod 600 ~/.ssh/id_rsa
-                  ssh-keyscan -p ${{ env.SERVER_PORT }} ${{ env.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null || true
+                      # Configuration
+                      DEPLOY_PATH="${{ secrets.SERVER_PATH }}/ffme"
+                      GIT_REPO="https://github.com/${{ github.repository }}.git"
 
-                  sudo apt-get update && sudo apt-get install -y expect
+                      echo ""
+                      echo "=== 1. Préparation du répertoire ==="
+                      mkdir -p "$DEPLOY_PATH"
+                      cd "$DEPLOY_PATH"
 
-                  eval $(ssh-agent -s)
-                  echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK" >> $GITHUB_ENV
-                  echo "SSH_AGENT_PID=$SSH_AGENT_PID" >> $GITHUB_ENV
+                      # Clonage ou mise à jour du repo
+                      if [ ! -d .git ]; then
+                          echo "Premier déploiement - Clonage du repo..."
+                          git clone --depth=1 --branch main "$GIT_REPO" .
+                      else
+                          echo "Mise à jour du repo existant..."
+                          git fetch origin --prune
+                          git reset --hard HEAD
+                          git clean -fd
+                          git checkout -B main origin/main
+                      fi
 
-                  expect << 'EXPECT_EOF'
-                  spawn ssh-add /home/runner/.ssh/id_rsa
-                  expect "Enter passphrase"
-                  send "$env(SSH_PASSPHRASE)\r"
-                  expect eof
-                  EXPECT_EOF
+                      echo "Dernier commit: $(git log -1 --oneline)"
 
-                  ssh-add -l
+                      echo ""
+                      echo "=== 2. Création du fichier .env ==="
+                      cat > .env << 'ENVEOF'
+                      # Database
+                      MONGO_URI=${{ secrets.MONGO_URI }}
 
-            - name: Create deployment directory
-              run: |
-                  ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
-                    ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
-                    "mkdir -p ${{ env.DEPLOY_PATH }}"
+                      # Authentication
+                      JWT_SECRET=${{ secrets.JWT_SECRET }}
 
-            - name: Sync files to server
-              run: |
-                  # Create archive (ignore "file changed" warning - exit code 1)
-                  tar --exclude='.git' \
-                      --exclude='node_modules' \
-                      --exclude='dist' \
-                      --exclude='.angular' \
-                      --exclude='.env' \
-                      --exclude='.env.local' \
-                      --exclude='coverage' \
-                      --exclude='*.log' \
-                      --exclude='deploy.tar.gz' \
-                      -czf deploy.tar.gz . 2>/dev/null || true
+                      # FTP (fichiers)
+                      FTP_HOST=${{ secrets.FTP_HOST }}
+                      FTP_PORT=${{ secrets.FTP_PORT }}
+                      FTP_USER=${{ secrets.FTP_USER }}
+                      FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}
 
-                  # Verify archive was created
-                  if [ ! -f deploy.tar.gz ]; then
-                    echo "Failed to create archive"
-                    exit 1
-                  fi
+                      # Email SMTP
+                      SMTP_HOST=${{ secrets.SMTP_HOST }}
+                      SMTP_PORT=${{ secrets.SMTP_PORT }}
+                      SMTP_USER=${{ secrets.SMTP_USER }}
+                      SMTP_PASS=${{ secrets.SMTP_PASS }}
 
-                  echo "Archive created: $(ls -lh deploy.tar.gz)"
+                      # Singpay (paiements)
+                      SINGPAY_CLIENT_ID=${{ secrets.SINGPAY_CLIENT_ID }}
+                      SINGPAY_CLIENT_SECRET=${{ secrets.SINGPAY_CLIENT_SECRET }}
+                      SINGPAY_WALLET_ID=${{ secrets.SINGPAY_WALLET_ID }}
+                      SINGPAY_DISBURSEMENT_ID=${{ secrets.SINGPAY_DISBURSEMENT_ID }}
+                      ENVEOF
+                      echo "✅ Fichier .env créé"
 
-                  # Upload archive to server
-                  scp -P ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
-                    deploy.tar.gz ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }}:${{ env.DEPLOY_PATH }}/
+                      echo ""
+                      echo "=== 3. Vérification Docker ==="
+                      if ! command -v docker &> /dev/null; then
+                          echo "❌ Docker non installé!"
+                          exit 1
+                      fi
+                      docker --version
+                      docker compose version || docker-compose --version
 
-                  # Extract on server and cleanup
-                  ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
-                    ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
-                    "cd ${{ env.DEPLOY_PATH }} && tar -xzf deploy.tar.gz && rm deploy.tar.gz"
+                      echo ""
+                      echo "=== 4. Arrêt des anciens containers ==="
+                      docker compose down --remove-orphans 2>/dev/null || true
+                      docker stop ffme-client ffme-server 2>/dev/null || true
+                      docker rm ffme-client ffme-server 2>/dev/null || true
 
-                  rm deploy.tar.gz
-                  echo "Files synced successfully"
+                      echo ""
+                      echo "=== 5. Nettoyage des anciennes images ==="
+                      docker image prune -f
+                      # Supprimer les anciennes images FFME pour forcer un rebuild propre
+                      docker rmi $(docker images -q 'ffme-*' 2>/dev/null) 2>/dev/null || true
+                      docker rmi $(docker images -q '*ffme*' 2>/dev/null) 2>/dev/null || true
 
-            - name: Create environment file
-              run: |
-                  ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
-                    ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} \
-                    "cat > ${{ env.DEPLOY_PATH }}/.env << 'ENVEOF'
-                  MONGO_ROOT_USER=${{ secrets.MONGO_ROOT_USER }}
-                  MONGO_ROOT_PASSWORD=${{ secrets.MONGO_ROOT_PASSWORD }}
-                  MONGO_URI=${{ secrets.MONGO_URI }}
-                  JWT_SECRET=${{ secrets.JWT_SECRET }}
-                  FTP_HOST=${{ secrets.FTP_HOST }}
-                  FTP_PORT=${{ secrets.FTP_PORT }}
-                  FTP_USER=${{ secrets.FTP_USER }}
-                  FTP_PASSWORD=${{ secrets.FTP_PASSWORD }}
-                  SMTP_HOST=${{ secrets.SMTP_HOST }}
-                  SMTP_PORT=${{ secrets.SMTP_PORT }}
-                  SMTP_USER=${{ secrets.SMTP_USER }}
-                  SMTP_PASS=${{ secrets.SMTP_PASS }}
-                  SINGPAY_CLIENT_ID=${{ secrets.SINGPAY_CLIENT_ID }}
-                  SINGPAY_CLIENT_SECRET=${{ secrets.SINGPAY_CLIENT_SECRET }}
-                  SINGPAY_WALLET_ID=${{ secrets.SINGPAY_WALLET_ID }}
-                  SINGPAY_DISBURSEMENT_ID=${{ secrets.SINGPAY_DISBURSEMENT_ID }}
-                  ENVEOF"
+                      echo ""
+                      echo "=== 6. Build des images Docker ==="
+                      echo "⏳ Build en cours (peut prendre plusieurs minutes)..."
+                      docker compose build --no-cache --progress=plain
 
-            - name: Build and deploy Docker containers
-              run: |
-                  ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
-                    ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
-                  cd ${{ env.DEPLOY_PATH }}
+                      echo ""
+                      echo "=== 7. Démarrage des containers ==="
+                      docker compose up -d --force-recreate
 
-                  echo "=== Stopping existing containers ==="
-                  docker compose down --remove-orphans 2>/dev/null || true
-                  docker stop ffme-client ffme-server ffme-mongodb 2>/dev/null || true
-                  docker rm ffme-client ffme-server ffme-mongodb 2>/dev/null || true
+                      echo ""
+                      echo "=== 8. Attente du démarrage ==="
+                      echo "⏳ Attente de 30 secondes pour le démarrage des services..."
+                      sleep 30
 
-                  echo "=== Removing old images ==="
-                  docker rmi $(docker images -q '*ffme*' 2>/dev/null) 2>/dev/null || true
+                      echo ""
+                      echo "=== 9. Vérification des services ==="
 
-                  echo "=== Building Docker images ==="
-                  docker compose build --no-cache
+                      # Vérification du serveur
+                      MAX_RETRIES=5
+                      RETRY=0
+                      SERVER_OK=false
+                      while [ $RETRY -lt $MAX_RETRIES ]; do
+                          if curl -sf http://localhost:3000/api/health > /dev/null 2>&1; then
+                              echo "✅ Server API: OK (port 3000)"
+                              SERVER_OK=true
+                              break
+                          else
+                              RETRY=$((RETRY+1))
+                              echo "⏳ Tentative $RETRY/$MAX_RETRIES - Server ne répond pas encore..."
+                              sleep 5
+                          fi
+                      done
 
-                  echo "=== Starting application ==="
-                  docker compose up -d --force-recreate
+                      if [ "$SERVER_OK" = false ]; then
+                          echo "❌ Server API: FAILED"
+                          echo "--- Logs serveur ---"
+                          docker logs ffme-server --tail 50 2>/dev/null || true
+                      fi
 
-                  echo "=== Cleaning up ==="
-                  docker image prune -f
+                      # Vérification du client
+                      RETRY=0
+                      CLIENT_OK=false
+                      while [ $RETRY -lt $MAX_RETRIES ]; do
+                          if curl -sf http://localhost:4200 > /dev/null 2>&1; then
+                              echo "✅ Client: OK (port 4200)"
+                              CLIENT_OK=true
+                              break
+                          else
+                              RETRY=$((RETRY+1))
+                              echo "⏳ Tentative $RETRY/$MAX_RETRIES - Client ne répond pas encore..."
+                              sleep 5
+                          fi
+                      done
 
-                  echo "=== Status ==="
-                  docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep ffme || echo "Containers starting..."
-                  ENDSSH
+                      if [ "$CLIENT_OK" = false ]; then
+                          echo "❌ Client: FAILED"
+                          echo "--- Logs client ---"
+                          docker logs ffme-client --tail 50 2>/dev/null || true
+                      fi
 
-            - name: Verify deployment
-              run: |
-                  echo "Waiting 30s for containers to start..."
-                  sleep 30
-                  ssh -p ${{ env.SERVER_PORT }} -o StrictHostKeyChecking=no \
-                    ${{ env.SERVER_USER }}@${{ env.SERVER_HOST }} << 'ENDSSH'
+                      echo ""
+                      echo "=== 10. Status final ==="
+                      docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E "(NAMES|ffme)" || true
 
-                  echo "=== Checking containers ==="
-
-                  if docker ps | grep -q ffme-server; then
-                    echo "Server: OK"
-                  else
-                    echo "Server: FAILED"
-                    docker logs ffme-server --tail 30 2>/dev/null || true
-                  fi
-
-                  if docker ps | grep -q ffme-client; then
-                    echo "Client: OK"
-                  else
-                    echo "Client: FAILED"
-                    docker logs ffme-client --tail 30 2>/dev/null || true
-                  fi
-
-                  echo ""
-                  echo "=== Server logs ==="
-                  docker logs ffme-server --tail 15 2>/dev/null || echo "No logs"
-
-                  if docker ps | grep -q ffme-client && docker ps | grep -q ffme-server; then
-                    echo ""
-                    echo "=== DEPLOYMENT SUCCESSFUL ==="
-                  else
-                    echo ""
-                    echo "=== DEPLOYMENT FAILED ==="
-                    exit 1
-                  fi
-                  ENDSSH
-
-            - name: Cleanup SSH agent
-              if: always()
-              run: |
-                  ssh-agent -k 2>/dev/null || true
+                      echo ""
+                      if [ "$SERVER_OK" = true ] && [ "$CLIENT_OK" = true ]; then
+                          echo "=========================================="
+                          echo "=== ✅ DÉPLOIEMENT RÉUSSI              ==="
+                          echo "=========================================="
+                          echo "Client: http://localhost:4200"
+                          echo "API:    http://localhost:3000/api"
+                          exit 0
+                      else
+                          echo "=========================================="
+                          echo "=== ❌ DÉPLOIEMENT ÉCHOUÉ              ==="
+                          echo "=========================================="
+                          exit 1
+                      fi
