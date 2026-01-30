@@ -4,6 +4,10 @@
     display: flex;
     min-height: 100vh;
     background: $admin-bg;
+
+    @include admin-mobile {
+        flex-direction: column;
+    }
 }
 
 // === LEFT PANEL - BRANDING ===
@@ -41,7 +45,15 @@
     }
 
     @include admin-mobile {
-        display: none;
+        flex: none;
+        min-height: auto;
+        padding: $admin-spacing-xl $admin-spacing-md;
+
+        // Hide decorative elements on mobile
+        &::before,
+        &::after {
+            display: none;
+        }
     }
 }
 
@@ -68,10 +80,21 @@
     justify-content: center;
     box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
 
+    @include admin-mobile {
+        width: 80px;
+        height: 80px;
+        margin-bottom: $admin-spacing-md;
+    }
+
     img {
         width: 80px;
         height: 80px;
         object-fit: contain;
+
+        @include admin-mobile {
+            width: 50px;
+            height: 50px;
+        }
     }
 }
 
@@ -80,12 +103,22 @@
     font-weight: $admin-font-weight-bold;
     margin-bottom: $admin-spacing-sm;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+    @include admin-mobile {
+        font-size: $admin-font-size-xl;
+        margin-bottom: $admin-spacing-xs;
+    }
 }
 
 .branding-subtitle {
     font-size: $admin-font-size-lg;
     opacity: 0.9;
     margin-bottom: $admin-spacing-2xl;
+
+    @include admin-mobile {
+        font-size: $admin-font-size-sm;
+        margin-bottom: 0;
+    }
 }
 
 .branding-features {
@@ -93,6 +126,10 @@
     flex-direction: column;
     gap: $admin-spacing-md;
     margin-top: $admin-spacing-xl;
+
+    @include admin-mobile {
+        display: none;
+    }
 
     .feature {
         display: flex;
@@ -122,6 +159,10 @@
     transform: translateX(-50%);
     color: rgba(255, 255, 255, 0.7);
     font-size: $admin-font-size-sm;
+
+    @include admin-mobile {
+        display: none;
+    }
 }
 
 // === RIGHT PANEL - FORM ===

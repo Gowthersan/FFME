@@ -335,3 +335,126 @@
     }
   }
 }
+
+// === MOBILE HEADER ===
+.admin-mobile-header {
+  display: none;
+
+  @include admin-mobile {
+    display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: $admin-surface;
+    border-bottom: 1px solid $admin-border;
+    z-index: $admin-z-sidebar - 2;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 $admin-spacing-md;
+
+    .dark-mode & {
+      background: $admin-surface-dark;
+      border-color: $admin-border-dark;
+    }
+  }
+}
+
+.admin-mobile-header__left {
+  display: flex;
+  align-items: center;
+  gap: $admin-spacing-md;
+}
+
+.admin-mobile-header__logo {
+  height: 36px;
+  width: auto;
+}
+
+.admin-mobile-header__title {
+  font-size: $admin-font-size-base;
+  font-weight: $admin-font-weight-semibold;
+  color: $admin-text-primary;
+
+  .dark-mode & {
+    color: $admin-text-primary-dark;
+  }
+}
+
+// === HAMBURGER BUTTON ===
+.admin-hamburger {
+  display: none;
+
+  @include admin-mobile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: $admin-border-radius;
+    color: $admin-text-primary;
+    @include admin-transition(background);
+
+    &:hover {
+      background: $admin-bg;
+    }
+
+    .dark-mode & {
+      color: $admin-text-primary-dark;
+
+      &:hover {
+        background: $admin-bg-secondary-dark;
+      }
+    }
+
+    svg {
+      width: 24px;
+      height: 24px;
+    }
+  }
+}
+
+.admin-hamburger__line {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 1px;
+  position: relative;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: currentColor;
+    border-radius: 1px;
+    @include admin-transition(transform);
+  }
+
+  &::before {
+    top: -7px;
+  }
+
+  &::after {
+    top: 7px;
+  }
+
+  .open & {
+    background: transparent;
+
+    &::before {
+      transform: translateY(7px) rotate(45deg);
+    }
+
+    &::after {
+      transform: translateY(-7px) rotate(-45deg);
+    }
+  }
+}

@@ -23,23 +23,37 @@ export class GalleryDatabaseFtpService {
         return GalleryPhotoModel.find({ eventName }).lean();
     }
 
-    async streamImage(filename: string): Promise<{ stream: Readable; mime: string }> {
-        const sftp = await this.sftpPool.acquire();
+    async streamImage(filename: string, retries = 3): Promise<{ stream: Readable; mime: string }> {
+        let lastError: Error | null = null;
 
-        try {
-            const fullPath = filename.startsWith('galleryImages/') ? filename : `galleryImages/${filename}`;
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            let sftp = null;
+            try {
+                sftp = await this.sftpPool.acquire();
+                const fullPath = filename.startsWith('galleryImages/') ? filename : `galleryImages/${filename}`;
 
-            const buffer = await sftp.get(fullPath);
-            const mimeType = mime.lookup(filename) || 'application/octet-stream';
+                const buffer = await sftp.get(fullPath);
+                const mimeType = mime.lookup(filename) || 'application/octet-stream';
 
-            const stream = Readable.from(buffer);
+                const stream = Readable.from(buffer);
 
-            return { stream, mime: mimeType.toString() };
-        } catch (err) {
-            throw new Error(`Erreur SFTP lors du téléchargement de l'image : ${err.message}`);
-        } finally {
-            this.sftpPool.release(sftp);
+                return { stream, mime: mimeType.toString() };
+            } catch (err) {
+                lastError = err as Error;
+                console.error(`Erreur streaming image (tentative ${attempt}/${retries}):`, (err as Error).message);
+
+                if (attempt < retries) {
+                    // Attente avant retry
+                    await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+                }
+            } finally {
+                if (sftp) {
+                    this.sftpPool.release(sftp);
+                }
+            }
         }
+
+        throw new Error(`Erreur SFTP après ${retries} tentatives : ${lastError?.message}`);
     }
 
     async uploadPhoto(file: Express.Multer.File, eventName: string, description: string): Promise<GalleryPhoto> {

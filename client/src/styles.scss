@@ -341,6 +341,15 @@ body.gallery-page app-navbar {
     min-height: 100vh;
     background-color: #fff;
     padding: var(--space-sm);
+    transition: margin-left 0.3s ease;
+}
+
+/* Responsive admin sidebar */
+@media (max-width: 768px) {
+    .with-sidebar {
+        margin-left: 0;
+        padding-top: 70px; /* Space for mobile header */
+    }
 }
 
 /* Focus states pour accessibilité */

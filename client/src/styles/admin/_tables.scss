@@ -448,3 +448,148 @@
     }
   }
 }
+
+// === MOBILE RESPONSIVE ===
+@include admin-mobile {
+  // Search full width
+  .admin-table-search {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  // Toolbar stacked
+  .admin-table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: $admin-spacing-sm;
+    padding: $admin-spacing-md;
+  }
+
+  .admin-table-toolbar__left,
+  .admin-table-toolbar__right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .admin-table-toolbar__right {
+    flex-wrap: wrap;
+    gap: $admin-spacing-xs;
+  }
+
+  // Pagination mobile
+  .admin-table-pagination {
+    flex-direction: column;
+    align-items: center;
+    gap: $admin-spacing-sm;
+    padding: $admin-spacing-md;
+  }
+
+  .admin-table-pagination__info {
+    order: 2;
+    text-align: center;
+  }
+
+  .admin-table-pagination__controls {
+    order: 1;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-table-pagination__page-size {
+    order: 3;
+  }
+
+  // Touch-friendly pagination buttons
+  .admin-table-pagination__btn {
+    width: 44px;
+    height: 44px;
+    font-size: $admin-font-size-base;
+  }
+
+  // Table card layout for mobile
+  .admin-table-responsive {
+    .admin-table {
+      display: block;
+    }
+
+    .admin-table__head {
+      display: none;
+    }
+
+    .admin-table__body {
+      display: block;
+    }
+
+    .admin-table__body tr {
+      display: block;
+      margin-bottom: $admin-spacing-md;
+      border: 1px solid $admin-border;
+      border-radius: $admin-border-radius;
+      padding: $admin-spacing-md;
+      background: $admin-surface;
+
+      .dark-mode & {
+        border-color: $admin-border-dark;
+        background: $admin-surface-dark;
+      }
+
+      &:hover {
+        background: $admin-surface;
+
+        .dark-mode & {
+          background: $admin-surface-dark;
+        }
+      }
+    }
+
+    .admin-table__body td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: $admin-spacing-sm 0;
+      border: none;
+      border-bottom: 1px solid $admin-border;
+
+      .dark-mode & {
+        border-color: $admin-border-dark;
+      }
+
+      &:last-child {
+        border-bottom: none;
+        padding-top: $admin-spacing-md;
+        justify-content: flex-end;
+      }
+
+      &::before {
+        content: attr(data-label);
+        font-weight: $admin-font-weight-semibold;
+        font-size: $admin-font-size-xs;
+        color: $admin-text-muted;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        flex-shrink: 0;
+        margin-right: $admin-spacing-md;
+
+        .dark-mode & {
+          color: $admin-text-muted-dark;
+        }
+      }
+    }
+
+    // Hide checkbox column on mobile
+    .admin-table__checkbox {
+      display: none;
+    }
+  }
+}
+
+// === TABLET RESPONSIVE ===
+@include admin-tablet {
+  .admin-table-search {
+    width: 220px;
+  }
+
+  .admin-table-toolbar {
+    padding: $admin-spacing-md;
+  }
+}

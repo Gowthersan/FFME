@@ -19,17 +19,32 @@ export class NewsDatabaseFtpService {
         return NewsModel.findById(id).lean();
     }
 
-    async streamImage(filename: string): Promise<{ stream: Readable; mime: string }> {
-        const sftp = await this.sftpPool.acquire();
-        try {
-            const fullPath = filename.startsWith('newsImages/') ? filename : `newsImages/${filename}`;
-            const buffer = await sftp.get(fullPath);
-            const mimeType = mime.lookup(filename) || 'application/octet-stream';
-            const stream = Readable.from(buffer);
-            return { stream, mime: mimeType.toString() };
-        } finally {
-            this.sftpPool.release(sftp);
+    async streamImage(filename: string, retries = 3): Promise<{ stream: Readable; mime: string }> {
+        let lastError: Error | null = null;
+
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            let sftp = null;
+            try {
+                sftp = await this.sftpPool.acquire();
+                const fullPath = filename.startsWith('newsImages/') ? filename : `newsImages/${filename}`;
+                const buffer = await sftp.get(fullPath);
+                const mimeType = mime.lookup(filename) || 'application/octet-stream';
+                const stream = Readable.from(buffer);
+                return { stream, mime: mimeType.toString() };
+            } catch (err) {
+                lastError = err as Error;
+                console.error(`Erreur streaming news image (tentative ${attempt}/${retries}):`, (err as Error).message);
+                if (attempt < retries) {
+                    await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
+                }
+            } finally {
+                if (sftp) {
+                    this.sftpPool.release(sftp);
+                }
+            }
         }
+
+        throw new Error(`Erreur SFTP après ${retries} tentatives : ${lastError?.message}`);
     }
 
     async uploadNews(file: Express.Multer.File, title: string, description: string, date: string, externalLink?: string): Promise<News> {

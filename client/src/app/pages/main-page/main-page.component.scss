@@ -39,6 +39,14 @@
 
 .server-message {
     justify-content: center;
-    width: 20%;
+    width: auto;
+    max-width: 300px;
     min-width: min-content;
+}
+
+@media (max-width: 768px) {
+    .server-message {
+        max-width: 100%;
+        width: 100%;
+    }
 }

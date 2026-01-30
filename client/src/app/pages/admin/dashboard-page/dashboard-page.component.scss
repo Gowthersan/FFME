@@ -7,9 +7,14 @@
     background: $admin-bg;
     padding: $admin-spacing-xl;
 
+    @include admin-tablet {
+        padding: $admin-spacing-lg;
+    }
+
     @include admin-mobile {
         margin-left: 0;
         padding: $admin-spacing-md;
+        padding-top: 80px; // Space for mobile header
     }
 }
 
@@ -24,6 +29,7 @@
 
     &__left {
         flex: 1;
+        min-width: 200px;
     }
 
     &__title {
@@ -31,6 +37,10 @@
         font-weight: $admin-font-weight-bold;
         color: $admin-text-primary;
         margin: 0 0 $admin-spacing-xs 0;
+
+        @include admin-mobile {
+            font-size: $admin-font-size-2xl;
+        }
     }
 
     &__subtitle {
@@ -42,6 +52,12 @@
     &__right {
         display: flex;
         gap: $admin-spacing-sm;
+        flex-wrap: wrap;
+
+        @include admin-mobile {
+            width: 100%;
+            flex-direction: column;
+        }
     }
 }
 
@@ -49,6 +65,7 @@
 .admin-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: $admin-spacing-sm;
     padding: $admin-spacing-sm $admin-spacing-lg;
     font-size: $admin-font-size-sm;
@@ -57,9 +74,16 @@
     cursor: pointer;
     @include admin-transition(all);
     border: 1px solid transparent;
+    white-space: nowrap;
 
     i {
         font-size: 14px;
+    }
+
+    @include admin-mobile {
+        width: 100%;
+        padding: $admin-spacing-md;
+        min-height: 44px; // Touch-friendly
     }
 
     &--outline {
@@ -99,8 +123,14 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
+    @include admin-tablet {
+        grid-template-columns: repeat(2, 1fr);
+        gap: $admin-spacing-md;
+    }
+
     @include admin-mobile {
         grid-template-columns: 1fr;
+        gap: $admin-spacing-md;
     }
 }
 
@@ -136,6 +166,15 @@
     &__body {
         padding: $admin-spacing-lg;
         height: 350px;
+
+        @include admin-tablet {
+            height: 300px;
+        }
+
+        @include admin-mobile {
+            height: 250px;
+            padding: $admin-spacing-md;
+        }
     }
 }
 
@@ -149,8 +188,14 @@
     grid-template-columns: repeat(3, 1fr);
     gap: $admin-spacing-lg;
 
+    @include admin-tablet {
+        grid-template-columns: repeat(2, 1fr);
+        gap: $admin-spacing-md;
+    }
+
     @include admin-mobile {
         grid-template-columns: 1fr;
+        gap: $admin-spacing-md;
     }
 }
 
