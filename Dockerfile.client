@@ -14,7 +14,7 @@ WORKDIR /app
 COPY client ./client
 
 WORKDIR /app/client
-RUN pnpm ng build --configuration docker
+RUN pnpm ng build --configuration production
 
 # Dependencies stage
 FROM node:20-alpine AS deps

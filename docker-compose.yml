@@ -5,6 +5,7 @@ services:
             dockerfile: Dockerfile.server
         container_name: ffme-server
         restart: unless-stopped
+        network_mode: host
         environment:
             NODE_ENV: production
             PORT: 3000
@@ -21,10 +22,6 @@ services:
         volumes:
             - server_uploads:/app/uploads
             - server_assets:/app/assets
-        ports:
-            - '127.0.0.1:3000:3000'
-        networks:
-            - ffme-network
 
     client:
         build:
