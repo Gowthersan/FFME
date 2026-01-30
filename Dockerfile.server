@@ -24,43 +24,51 @@ COPY server ./server
 WORKDIR /app/server
 RUN pnpm run build
 
-# Stage 2: Production runtime
-FROM node:20-alpine AS production
+# Stage 2: Install production dependencies
+FROM node:20-alpine AS deps
 
 WORKDIR /app
 
 # Install pnpm
 RUN npm install -g pnpm
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
-
 # Copy package files
 COPY server/package.json server/pnpm-lock.yaml ./
 
-# Install all dependencies (including devDependencies needed at runtime)
-RUN pnpm install --frozen-lockfile
+# Install production dependencies only
+RUN pnpm install --frozen-lockfile --prod
+
+# Create directories
+RUN mkdir -p uploads assets
+
+# Stage 3: Production with distroless (no shell, no bash)
+FROM gcr.io/distroless/nodejs20-debian12 AS production
+
+WORKDIR /app
+
+# Copy node_modules from deps stage
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built files from builder stage
 COPY --from=builder /app/server/out ./out
 
-# Create uploads directory with proper permissions
-RUN mkdir -p uploads assets && chown -R nodejs:nodejs uploads assets
+# Copy healthcheck script
+COPY server/healthcheck.js ./healthcheck.js
 
-# Switch to non-root user
-USER nodejs
+# Copy empty directories (will be mounted as volumes)
+COPY --from=deps /app/uploads ./uploads
+COPY --from=deps /app/assets ./assets
 
 # Expose port
 EXPOSE 3000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
 
 # Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Health check using Node.js script
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ["node", "healthcheck.js"]
+
 # Start the application
-CMD ["node", "out/server/app/index.js"]
+CMD ["out/server/app/index.js"]

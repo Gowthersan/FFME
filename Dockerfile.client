@@ -24,19 +24,32 @@ COPY client ./client
 WORKDIR /app/client
 RUN pnpm ng build --configuration docker
 
-# Stage 2: Serve with Node.js
-FROM node:20-alpine AS production
+# Stage 2: Install serve
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+RUN npm install serve
+
+# Stage 3: Production with distroless (no shell, no bash)
+FROM gcr.io/distroless/nodejs20-debian12 AS production
 
 WORKDIR /app
 
-# Install serve globally (handles SPA routing automatically)
-RUN npm install -g serve
+# Copy serve from deps stage
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy built files from builder stage
 COPY --from=builder /app/client/dist/client ./dist
 
+# Copy healthcheck script
+COPY client/healthcheck.js ./healthcheck.js
+
 # Expose port 80
 EXPOSE 80
 
+# Health check using Node.js script
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ["node", "healthcheck.js"]
+
 # Start serve on port 80 with SPA support
-CMD ["serve", "-s", "dist", "-l", "80"]
+CMD ["node_modules/serve/build/main.js", "-s", "dist", "-l", "80"]
