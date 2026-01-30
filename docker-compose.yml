@@ -1,22 +1,15 @@
-version: '3.8'
-
 services:
-    # Backend Server (Express/Node.js)
     server:
         build:
             context: .
             dockerfile: Dockerfile.server
         container_name: ffme-server
         restart: unless-stopped
-        depends_on:
-            mongodb:
-                condition: service_healthy
         environment:
             NODE_ENV: production
             PORT: 3000
             JWT_SECRET: ${JWT_SECRET}
             MONGO_URI: ${MONGO_URI}
-            MAIL_API_KEY: ${MAIL_API_KEY}
             FTP_HOST: ${FTP_HOST}
             FTP_PORT: ${FTP_PORT}
             FTP_USER: ${FTP_USER}
@@ -32,9 +25,7 @@ services:
             - '127.0.0.1:3000:3000'
         networks:
             - ffme-network
-        # Healthcheck défini dans Dockerfile.server (node healthcheck.js)
 
-    # Frontend Client (Angular)
     client:
         build:
             context: .
@@ -47,17 +38,12 @@ services:
             - '127.0.0.1:4200:80'
         networks:
             - ffme-network
-        # Healthcheck défini dans Dockerfile.client (node healthcheck.js)
 
 networks:
     ffme-network:
         driver: bridge
 
 volumes:
-    mongodb_data:
-        driver: local
-    mongodb_config:
-        driver: local
     server_uploads:
         driver: local
     server_assets:

@@ -1,55 +1,35 @@
-# Stage 1: Build Angular application
+# Build stage
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-
-# Install pnpm
 RUN npm install -g pnpm
 
-# Copy common folder first (needed for @common/* imports)
 COPY common ./common
-
-# Copy client package files
 COPY client/package.json client/pnpm-lock.yaml ./client/
 
-# Install dependencies
 WORKDIR /app/client
 RUN pnpm install --frozen-lockfile
 
-# Copy client source code
 WORKDIR /app
 COPY client ./client
 
-# Build the application with docker configuration
 WORKDIR /app/client
 RUN pnpm ng build --configuration docker
 
-# Stage 2: Install serve
+# Dependencies stage
 FROM node:20-alpine AS deps
 
 WORKDIR /app
 RUN npm install serve
 
-# Stage 3: Production with distroless (no shell, no bash)
-FROM gcr.io/distroless/nodejs20-debian12 AS production
+# Production stage (distroless)
+FROM gcr.io/distroless/nodejs20-debian12
 
 WORKDIR /app
 
-# Copy serve from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy built files from builder stage
 COPY --from=builder /app/client/dist/client ./dist
 
-# Copy healthcheck script
-COPY client/healthcheck.js ./healthcheck.js
-
-# Expose port 80
 EXPOSE 80
 
-# Health check using Node.js script
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["node", "healthcheck.js"]
-
-# Start serve on port 80 with SPA support
 CMD ["node_modules/serve/build/main.js", "-s", "dist", "-l", "80"]

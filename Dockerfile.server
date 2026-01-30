@@ -1,74 +1,43 @@
-# Stage 1: Build TypeScript application
+# Build stage
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-
-# Install pnpm
 RUN npm install -g pnpm
 
-# Copy common interfaces first (needed for build)
 COPY common ./common
-
-# Copy server package files
 COPY server/package.json server/pnpm-lock.yaml ./server/
 
-# Install dependencies
 WORKDIR /app/server
 RUN pnpm install --frozen-lockfile
 
-# Copy server source code
 WORKDIR /app
 COPY server ./server
 
-# Build the application
 WORKDIR /app/server
 RUN pnpm run build
 
-# Stage 2: Install production dependencies
+# Dependencies stage
 FROM node:20-alpine AS deps
 
 WORKDIR /app
-
-# Install pnpm
 RUN npm install -g pnpm
 
-# Copy package files
 COPY server/package.json server/pnpm-lock.yaml ./
-
-# Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
-
-# Create directories
 RUN mkdir -p uploads assets
 
-# Stage 3: Production with distroless (no shell, no bash)
-FROM gcr.io/distroless/nodejs20-debian12 AS production
+# Production stage (distroless)
+FROM gcr.io/distroless/nodejs20-debian12
 
 WORKDIR /app
 
-# Copy node_modules from deps stage
 COPY --from=deps /app/node_modules ./node_modules
-
-# Copy built files from builder stage
 COPY --from=builder /app/server/out ./out
-
-# Copy healthcheck script
-COPY server/healthcheck.js ./healthcheck.js
-
-# Copy empty directories (will be mounted as volumes)
 COPY --from=deps /app/uploads ./uploads
 COPY --from=deps /app/assets ./assets
 
-# Expose port
 EXPOSE 3000
-
-# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Health check using Node.js script
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["node", "healthcheck.js"]
-
-# Start the application
 CMD ["out/server/app/index.js"]
