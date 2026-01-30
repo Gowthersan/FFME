@@ -35,34 +35,10 @@ jobs:
 
                       # Configuration
                       DEPLOY_PATH="${{ secrets.SERVER_PATH }}/ffme"
-
-
-                      echo ""
-                      echo "=== 1. Préparation du répertoire ==="
-                      mkdir -p "$DEPLOY_PATH"
                       cd "$DEPLOY_PATH"
 
-                      # Clonage ou mise à jour du repo
-                      if [ -d .git ]; then
-                          echo "Repo git existant - Mise à jour..."
-                          git remote set-url origin "$GIT_REPO" 2>/dev/null || git remote add origin "$GIT_REPO"
-                          git fetch origin --prune
-                          git reset --hard HEAD
-                          git clean -fd
-                          git checkout -B main origin/main
-                      elif [ "$(ls -A 2>/dev/null)" ]; then
-                          echo "Répertoire non vide sans git - Nettoyage et clonage..."
-                          rm -rf ..?* .[!.]* * 2>/dev/null || true
-                          git clone --depth=1 --branch main "$GIT_REPO" .
-                      else
-                          echo "Premier déploiement - Clonage du repo..."
-                          git clone --depth=1 --branch main "$GIT_REPO" .
-                      fi
-
-                      echo "Dernier commit: $(git log -1 --oneline)"
-
                       echo ""
-                      echo "=== 2. Création du fichier .env ==="
+                      echo "=== 1. Création du fichier .env ==="
                       cat > .env << 'ENVEOF'
                       # Database
                       MONGO_URI=${{ secrets.MONGO_URI }}
@@ -91,7 +67,7 @@ jobs:
                       echo "✅ Fichier .env créé"
 
                       echo ""
-                      echo "=== 3. Vérification Docker ==="
+                      echo "=== 2. Vérification Docker ==="
                       if ! command -v docker &> /dev/null; then
                           echo "❌ Docker non installé!"
                           exit 1
@@ -100,34 +76,34 @@ jobs:
                       docker compose version || docker-compose --version
 
                       echo ""
-                      echo "=== 4. Arrêt des anciens containers ==="
+                      echo "=== 3. Arrêt des anciens containers ==="
                       docker compose down --remove-orphans 2>/dev/null || true
                       docker stop ffme-client ffme-server 2>/dev/null || true
                       docker rm ffme-client ffme-server 2>/dev/null || true
 
                       echo ""
-                      echo "=== 5. Nettoyage des anciennes images ==="
+                      echo "=== 4. Nettoyage des anciennes images ==="
                       docker image prune -f
                       # Supprimer les anciennes images FFME pour forcer un rebuild propre
                       docker rmi $(docker images -q 'ffme-*' 2>/dev/null) 2>/dev/null || true
                       docker rmi $(docker images -q '*ffme*' 2>/dev/null) 2>/dev/null || true
 
                       echo ""
-                      echo "=== 6. Build des images Docker ==="
+                      echo "=== 5. Build des images Docker ==="
                       echo "⏳ Build en cours (peut prendre plusieurs minutes)..."
                       docker compose build --no-cache --progress=plain
 
                       echo ""
-                      echo "=== 7. Démarrage des containers ==="
+                      echo "=== 6. Démarrage des containers ==="
                       docker compose up -d --force-recreate
 
                       echo ""
-                      echo "=== 8. Attente du démarrage ==="
+                      echo "=== 7. Attente du démarrage ==="
                       echo "⏳ Attente de 30 secondes pour le démarrage des services..."
                       sleep 30
 
                       echo ""
-                      echo "=== 9. Vérification des services ==="
+                      echo "=== 8. Vérification des services ==="
 
                       # Vérification du serveur
                       MAX_RETRIES=5
@@ -173,7 +149,7 @@ jobs:
                       fi
 
                       echo ""
-                      echo "=== 10. Status final ==="
+                      echo "=== 9. Status final ==="
                       docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E "(NAMES|ffme)" || true
 
                       echo ""
