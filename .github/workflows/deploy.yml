@@ -35,7 +35,7 @@ jobs:
 
                       # Configuration
                       DEPLOY_PATH="${{ secrets.SERVER_PATH }}/ffme"
-                      GIT_REPO="https://github.com/${{ github.repository }}.git"
+
 
                       echo ""
                       echo "=== 1. Préparation du répertoire ==="
