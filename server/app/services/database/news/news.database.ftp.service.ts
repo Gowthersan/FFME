@@ -1,7 +1,7 @@
 import { NewsModel } from '@app/models/news.model';
+import { ImageCacheService } from '@app/services/cache/image-cache.service';
 import { SftpPoolService } from '@app/services/sftp/sftp-pool.service';
 import { News } from '@common/interfaces/news';
-import mime from 'mime-types';
 import sharp from 'sharp';
 import { Readable } from 'stream';
 import { Service } from 'typedi';
@@ -9,7 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Service()
 export class NewsDatabaseFtpService {
-    constructor(private sftpPool: SftpPoolService) {}
+    constructor(
+        private sftpPool: SftpPoolService,
+        private imageCache: ImageCacheService,
+    ) {}
 
     async getAll(): Promise<News[]> {
         return NewsModel.find().sort({ date: -1 }).lean();
@@ -19,32 +22,9 @@ export class NewsDatabaseFtpService {
         return NewsModel.findById(id).lean();
     }
 
-    async streamImage(filename: string, retries = 3): Promise<{ stream: Readable; mime: string }> {
-        let lastError: Error | null = null;
-
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            let sftp = null;
-            try {
-                sftp = await this.sftpPool.acquire();
-                const fullPath = filename.startsWith('newsImages/') ? filename : `newsImages/${filename}`;
-                const buffer = await sftp.get(fullPath);
-                const mimeType = mime.lookup(filename) || 'application/octet-stream';
-                const stream = Readable.from(buffer);
-                return { stream, mime: mimeType.toString() };
-            } catch (err) {
-                lastError = err as Error;
-                console.error(`Erreur streaming news image (tentative ${attempt}/${retries}):`, (err as Error).message);
-                if (attempt < retries) {
-                    await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-                }
-            } finally {
-                if (sftp) {
-                    this.sftpPool.release(sftp);
-                }
-            }
-        }
-
-        throw new Error(`Erreur SFTP après ${retries} tentatives : ${lastError?.message}`);
+    async streamImage(filename: string): Promise<{ stream: Readable; mime: string }> {
+        const fullPath = filename.startsWith('newsImages/') ? filename : `newsImages/${filename}`;
+        return this.imageCache.getImage(fullPath);
     }
 
     async uploadNews(file: Express.Multer.File, title: string, description: string, date: string, externalLink?: string): Promise<News> {
@@ -56,6 +36,9 @@ export class NewsDatabaseFtpService {
 
             await sftp.mkdir('newsImages', true);
             await sftp.put(compressed, uniqueFilename);
+
+            // Ajouter au cache apres upload SFTP reussi
+            await this.imageCache.addToCache(uniqueFilename, compressed);
 
             return await NewsModel.create({
                 image: uniqueFilename,
@@ -80,6 +63,10 @@ export class NewsDatabaseFtpService {
         const sftp = await this.sftpPool.acquire();
         try {
             await sftp.delete(news.image);
+
+            // Supprimer du cache
+            await this.imageCache.removeFromCache(news.image);
+
             await NewsModel.deleteOne({ _id: id });
             return true;
         } catch {

@@ -87,41 +87,54 @@ export class Application {
 
     private config(): void {
         // Middlewares configuration
-        const isProduction = process.env.NODE_ENV === 'production';
 
-        // Origines autorisées selon l'environnement
+        // Origines autorisées (toujours)
         const allowedOrigins: string[] = [
-            // Production (toujours autorisé)
+            // Production
             'https://fondationfrancoismeye.ga',
             'https://www.fondationfrancoismeye.ga',
             'https://api.fondationfrancoismeye.ga',
+            // Localhost (dev local ou Docker local) - TOUJOURS autorisé
+            'http://localhost',
+            'http://localhost:80',
+            'http://localhost:3000',
+            'http://localhost:4200',
+            'http://localhost:5000',
+            'http://127.0.0.1',
+            'http://127.0.0.1:80',
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:4200',
+            'http://127.0.0.1:5000',
+            // Docker internal networking
+            'http://client',
+            'http://client:80',
         ];
-
-        // En développement uniquement : autoriser localhost et Docker
-        if (!isProduction) {
-            allowedOrigins.push(
-                // Docker (localhost mappé sur différents ports)
-                'http://localhost',
-                'http://localhost:80',
-                'http://localhost:4200',
-                'http://localhost:5000',
-                // Docker internal networking
-                'http://client',
-                'http://client:80',
-                // Développement local
-                'http://127.0.0.1:4200',
-            );
-        }
 
         // Ajouter CLIENT_URL si défini dans l'environnement
         if (process.env.CLIENT_URL) {
             allowedOrigins.push(process.env.CLIENT_URL.replace(/\/$/, ''));
         }
 
-        // CORS doit être configuré en premier pour gérer les erreurs aussi
+        // CORS avec fonction dynamique pour supporter toutes les origines localhost
         this.app.use(
             cors({
-                origin: allowedOrigins,
+                origin: (origin, callback) => {
+                    // Autoriser les requêtes sans origine (curl, Postman, etc.)
+                    if (!origin) return callback(null, true);
+
+                    // Autoriser toutes les origines localhost/127.0.0.1
+                    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+                        return callback(null, true);
+                    }
+
+                    // Vérifier dans la liste des origines autorisées
+                    if (allowedOrigins.includes(origin)) {
+                        return callback(null, true);
+                    }
+
+                    // Bloquer les autres origines
+                    callback(new Error(`CORS: Origin ${origin} not allowed`));
+                },
                 credentials: true,
                 methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
                 allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],

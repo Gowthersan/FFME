@@ -18,10 +18,10 @@ services:
             # Authentification
             JWT_SECRET: ${JWT_SECRET}
             # FTP (fichiers)
-            FTP_HOST: ${FTP_HOST}
-            FTP_PORT: ${FTP_PORT}
-            FTP_USER: ${FTP_USER}
-            FTP_PASSWORD: ${FTP_PASSWORD}
+            FTP_HOST: 51.77.212.203
+            FTP_PORT: 22
+            FTP_USER: junior
+            FTP_PASSWORD: E9hSAcE62ai44a2gm99Y2AUzK4ugL8Qt
             # Email
             SMTP_HOST: ${SMTP_HOST}
             SMTP_PORT: ${SMTP_PORT}

@@ -42,6 +42,8 @@ export class SftpPoolService {
             retries: this.maxRetries,
             retry_factor: 2,
             retry_minTimeout: 3000,
+            // Ignorer la vérification de clé d'hôte (nécessaire dans Docker)
+            hostVerifier: () => true,
             // Options SSH2 pour améliorer la stabilité
             algorithms: {
                 kex: [

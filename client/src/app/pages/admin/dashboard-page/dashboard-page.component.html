@@ -51,7 +51,7 @@
             <app-stat-card
                 title="Commandes"
                 [value]="stats?.ordersCount || 0"
-                [subtitle]="stats?.pendingOrdersCount ? stats?.pendingOrdersCount + ' en attente' : undefined"
+                [subtitle]="stats?.completedOrdersCount ? stats?.completedOrdersCount + ' payées • ' + (stats?.totalOrdersAmount | number) + ' FCFA' : (stats?.pendingOrdersCount ? stats?.pendingOrdersCount + ' en attente' : undefined)"
                 icon="fas fa-shopping-cart"
                 variant="warning"
                 [loading]="isLoading"
@@ -177,6 +177,7 @@
                                 <span class="activity-item__date">{{ order.date | date:'dd/MM/yyyy HH:mm' }}</span>
                             </div>
                             <div class="activity-item__right">
+                                <span class="activity-item__amount" *ngIf="order.totalAmount">{{ order.totalAmount | number }} F</span>
                                 <span
                                     class="activity-item__status"
                                     [ngClass]="getStatusClass(order.isPaid)"

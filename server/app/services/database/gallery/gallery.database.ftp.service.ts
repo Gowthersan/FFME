@@ -1,7 +1,7 @@
 import { GalleryPhotoModel } from '@app/models/gallery-photo.model';
+import { ImageCacheService } from '@app/services/cache/image-cache.service';
 import { SftpPoolService } from '@app/services/sftp/sftp-pool.service';
 import { GalleryPhoto } from '@common/interfaces/gallery-photo';
-import mime from 'mime-types';
 import sharp from 'sharp';
 import { Readable } from 'stream';
 import { Service } from 'typedi';
@@ -9,7 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Service()
 export class GalleryDatabaseFtpService {
-    constructor(private sftpPool: SftpPoolService) {}
+    constructor(
+        private sftpPool: SftpPoolService,
+        private imageCache: ImageCacheService,
+    ) {}
 
     async getAll(): Promise<GalleryPhoto[]> {
         return GalleryPhotoModel.find().lean();
@@ -23,37 +26,9 @@ export class GalleryDatabaseFtpService {
         return GalleryPhotoModel.find({ eventName }).lean();
     }
 
-    async streamImage(filename: string, retries = 3): Promise<{ stream: Readable; mime: string }> {
-        let lastError: Error | null = null;
-
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            let sftp = null;
-            try {
-                sftp = await this.sftpPool.acquire();
-                const fullPath = filename.startsWith('galleryImages/') ? filename : `galleryImages/${filename}`;
-
-                const buffer = await sftp.get(fullPath);
-                const mimeType = mime.lookup(filename) || 'application/octet-stream';
-
-                const stream = Readable.from(buffer);
-
-                return { stream, mime: mimeType.toString() };
-            } catch (err) {
-                lastError = err as Error;
-                console.error(`Erreur streaming image (tentative ${attempt}/${retries}):`, (err as Error).message);
-
-                if (attempt < retries) {
-                    // Attente avant retry
-                    await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-                }
-            } finally {
-                if (sftp) {
-                    this.sftpPool.release(sftp);
-                }
-            }
-        }
-
-        throw new Error(`Erreur SFTP après ${retries} tentatives : ${lastError?.message}`);
+    async streamImage(filename: string): Promise<{ stream: Readable; mime: string }> {
+        const fullPath = filename.startsWith('galleryImages/') ? filename : `galleryImages/${filename}`;
+        return this.imageCache.getImage(fullPath);
     }
 
     async uploadPhoto(file: Express.Multer.File, eventName: string, description: string): Promise<GalleryPhoto> {
@@ -72,6 +47,9 @@ export class GalleryDatabaseFtpService {
             await sftp.mkdir(remoteDir, true);
             await sftp.put(compressedBuffer, uniqueFilename);
 
+            // Ajouter au cache apres upload SFTP reussi
+            await this.imageCache.addToCache(uniqueFilename, compressedBuffer);
+
             const saved = await GalleryPhotoModel.create({
                 image: uniqueFilename,
                 eventName,
@@ -81,7 +59,7 @@ export class GalleryDatabaseFtpService {
 
             return saved;
         } catch (err) {
-            throw new Error(`Erreur SFTP upload : ${err.message}`);
+            throw new Error(`Erreur SFTP upload : ${(err as Error).message}`);
         } finally {
             this.sftpPool.release(sftp);
         }
@@ -91,6 +69,7 @@ export class GalleryDatabaseFtpService {
         const sftp = await this.sftpPool.acquire();
         const remoteDir = `galleryImages/${eventName}`;
         const photosToInsert: { image: string; eventName: string; description: string; date: string }[] = [];
+        const compressedBuffers: Map<string, Buffer> = new Map();
 
         try {
             await sftp.mkdir(remoteDir, true);
@@ -105,6 +84,9 @@ export class GalleryDatabaseFtpService {
 
                 await sftp.put(compressedBuffer, uniqueFilename);
 
+                // Stocker le buffer pour l'ajout au cache
+                compressedBuffers.set(uniqueFilename, compressedBuffer);
+
                 photosToInsert.push({
                     image: uniqueFilename,
                     eventName,
@@ -113,10 +95,15 @@ export class GalleryDatabaseFtpService {
                 });
             }
 
+            // Ajouter toutes les images au cache
+            for (const [filename, buffer] of compressedBuffers) {
+                await this.imageCache.addToCache(filename, buffer);
+            }
+
             const savedPhotos = await GalleryPhotoModel.insertMany(photosToInsert);
             return savedPhotos;
         } catch (err) {
-            throw new Error(`Erreur SFTP upload batch : ${err.message}`);
+            throw new Error(`Erreur SFTP upload batch : ${(err as Error).message}`);
         } finally {
             this.sftpPool.release(sftp);
         }
@@ -135,6 +122,10 @@ export class GalleryDatabaseFtpService {
 
         try {
             await sftp.delete(photo.image);
+
+            // Supprimer du cache
+            await this.imageCache.removeFromCache(photo.image);
+
             await GalleryPhotoModel.deleteOne({ _id: id });
             return true;
         } catch (err) {

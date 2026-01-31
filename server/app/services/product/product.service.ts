@@ -181,10 +181,26 @@ export class ProductService {
                 isPaid: PaymentStatus.COMPLETED,
                 paymentMethod: PaymentMethod.SING_PAY,
                 date: new Date().toISOString(),
+                totalAmount: pending.totalAmount,
+                items: pending.items.map((item) => ({
+                    productId: item.productId,
+                    title: item.title,
+                    type: item.type,
+                    versionLabel: item.versionLabel,
+                    price: item.price,
+                    quantity: item.quantity,
+                })),
                 products: products,
             };
 
             await this.productDatabaseService.createProductOrder(finalCommande);
+
+            // Mettre à jour la transaction comme complétée
+            await this.transactionDbService.updateStatus(orderId, 'completed', {
+                singpayStatus: status,
+                singpayRawResponse: tx.raw,
+                verifiedAt: new Date().toISOString(),
+            });
 
             // Supprimer la commande en attente
             await PendingOrderModel.deleteOne({ orderId });
@@ -205,7 +221,22 @@ export class ProductService {
         }
 
         if (status === 'Terminate' && result === 'TimeOutError') {
+            // Mettre à jour la transaction comme expirée
+            await this.transactionDbService.updateStatus(orderId, 'timeout', {
+                singpayStatus: status,
+                singpayRawResponse: tx.raw,
+                verifiedAt: new Date().toISOString(),
+            });
             return { success: false, message: 'Le paiement a expiré.' };
+        }
+
+        // Mettre à jour la transaction comme échouée
+        if (status === 'Failed' || result === 'Failed') {
+            await this.transactionDbService.updateStatus(orderId, 'failed', {
+                singpayStatus: status,
+                singpayRawResponse: tx.raw,
+                verifiedAt: new Date().toISOString(),
+            });
         }
 
         return { success: false, message: `Paiement non confirmé. Statut: ${status}` };

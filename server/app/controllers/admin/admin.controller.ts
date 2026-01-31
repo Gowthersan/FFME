@@ -69,15 +69,29 @@ export class AdminController {
                     this.transactionDbService.getRecentTransactions(10),
                 ]);
 
+                // Calcul des statistiques de commandes
+                const completedOrders = orders.filter((o) => o.isPaid === PaymentStatus.COMPLETED);
+                const totalOrdersAmount = completedOrders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
+
+                // Calcul des statistiques de dons
+                const completedDonations = donations.filter((d) => d.isPaid === PaymentStatus.COMPLETED);
+
+                // Calcul des statistiques de membres
+                const completedMembers = members.filter((m) => m.paymentStatus === PaymentStatus.COMPLETED);
+
                 const stats = {
                     donationsCount: donations.length,
-                    totalDonationAmount: donations.reduce((sum, d) => sum + (d.amount || 0), 0),
+                    totalDonationAmount: completedDonations.reduce((sum, d) => sum + (d.amount || 0), 0),
                     pendingDonationsCount: donations.filter((d) => d.isPaid === PaymentStatus.PENDING).length,
+                    completedDonationsCount: completedDonations.length,
                     membersCount: members.length,
                     pendingMembersCount: members.filter((m) => m.paymentStatus === PaymentStatus.PENDING).length,
                     validatedMembersCount: members.filter((m) => m.isValidated).length,
+                    completedMembersCount: completedMembers.length,
                     ordersCount: orders.length,
                     pendingOrdersCount: orders.filter((o) => o.isPaid === PaymentStatus.PENDING).length,
+                    completedOrdersCount: completedOrders.length,
+                    totalOrdersAmount: totalOrdersAmount,
                     productsCount: products.length,
                     newsCount: news.length,
                     photosCount: photos.length,
@@ -101,8 +115,9 @@ export class AdminController {
                             lastName: o.lastName,
                             isPaid: o.isPaid,
                             date: o.date,
+                            totalAmount: o.totalAmount || 0,
                         })),
-                    // Nouvelles stats de transactions Singpay
+                    // Statistiques de transactions Singpay
                     transactions: {
                         total: transactionStats.total,
                         completed: transactionStats.byStatus.completed,

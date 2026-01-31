@@ -465,9 +465,9 @@
 }
 
 /* ===== RESPONSIVE ===== */
-@media (max-width: 1100px) {
+@media (max-width: 1200px) and (min-width: 1025px) {
     .nav-links {
-        gap: var(--space-md);
+        gap: var(--space-sm);
 
         a {
             font-size: var(--text-sm);
@@ -482,10 +482,19 @@
             width: 16px;
             height: 16px;
         }
+
+        span {
+            display: none;
+        }
+    }
+
+    .login-button {
+        width: 38px;
+        height: 38px;
     }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
     .desktop {
         display: none !important;
     }
@@ -507,7 +516,7 @@
     }
 }
 
-@media (min-width: 901px) {
+@media (min-width: 1025px) {
     .burger {
         display: none;
     }

@@ -36,6 +36,15 @@ const productSchema = new Schema<Product>({
 productSchema.index({ type: 1 });
 productSchema.index({ title: 'text', description: 'text' });
 
+const orderItemSchema = new Schema({
+    productId: { type: String, required: true },
+    title: { type: String, required: true },
+    type: { type: String, required: true },
+    versionLabel: { type: String, required: true },
+    price: { type: Number, required: true },
+    quantity: { type: Number, required: true },
+});
+
 const productOrderSchema = new Schema<ProductOrder>({
     idOrder: { type: String, required: true },
     firstName: { type: String, required: true },
@@ -53,6 +62,8 @@ const productOrderSchema = new Schema<ProductOrder>({
         required: true,
     },
     date: { type: String, required: true },
+    totalAmount: { type: Number, required: true, default: 0 },
+    items: { type: [orderItemSchema], default: [] },
     products: { type: [productSchema], required: true },
 });
 

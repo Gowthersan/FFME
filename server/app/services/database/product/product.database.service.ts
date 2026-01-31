@@ -1,10 +1,10 @@
 import { ProductModel, ProductOrderModel } from '@app/models/products.model';
+import { ImageCacheService } from '@app/services/cache/image-cache.service';
 import { SftpPoolService } from '@app/services/sftp/sftp-pool.service';
 import { ProductComment } from '@common/interfaces/comment';
 import { PaginatedResponse } from '@common/interfaces/paginated-response';
 import { Product } from '@common/interfaces/product';
 import { ProductOrder } from '@common/interfaces/product-order';
-import mime from 'mime-types';
 import { Types } from 'mongoose';
 import sharp from 'sharp';
 import { Readable } from 'stream';
@@ -13,7 +13,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Service()
 export class ProductDatabaseService {
-    constructor(private sftpPool: SftpPoolService) {}
+    constructor(
+        private sftpPool: SftpPoolService,
+        private imageCache: ImageCacheService,
+    ) {}
 
     async createProduct(file: Express.Multer.File, data: Product): Promise<Product> {
         const sftp = await this.sftpPool.acquire();
@@ -22,6 +25,9 @@ export class ProductDatabaseService {
             const compressed = await sharp(file.buffer).resize({ width: 1280 }).webp({ quality: 70 }).toBuffer();
             await sftp.mkdir('productImages', true);
             await sftp.put(compressed, filename);
+
+            // Ajouter au cache apres upload SFTP reussi
+            await this.imageCache.addToCache(filename, compressed);
 
             const newProduct = new ProductModel({ ...data, image: filename });
             return await newProduct.save();
@@ -43,6 +49,9 @@ export class ProductDatabaseService {
         try {
             if (product.image) {
                 await sftp.delete(product.image);
+
+                // Supprimer du cache
+                await this.imageCache.removeFromCache(product.image);
             }
             await ProductModel.deleteOne({ _id: id });
             return true;
@@ -53,32 +62,9 @@ export class ProductDatabaseService {
         }
     }
 
-    async streamImage(filename: string, retries = 3): Promise<{ stream: Readable; mime: string }> {
-        let lastError: Error | null = null;
-
-        for (let attempt = 1; attempt <= retries; attempt++) {
-            let sftp = null;
-            try {
-                sftp = await this.sftpPool.acquire();
-                const path = filename.startsWith('productImages/') ? filename : `productImages/${filename}`;
-                const buffer = await sftp.get(path);
-                const mimeType = mime.lookup(filename) || 'application/octet-stream';
-                const stream = Readable.from(buffer);
-                return { stream, mime: mimeType.toString() };
-            } catch (err) {
-                lastError = err as Error;
-                console.error(`Erreur streaming product image (tentative ${attempt}/${retries}):`, (err as Error).message);
-                if (attempt < retries) {
-                    await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-                }
-            } finally {
-                if (sftp) {
-                    this.sftpPool.release(sftp);
-                }
-            }
-        }
-
-        throw new Error(`Erreur SFTP après ${retries} tentatives : ${lastError?.message}`);
+    async streamImage(filename: string): Promise<{ stream: Readable; mime: string }> {
+        const fullPath = filename.startsWith('productImages/') ? filename : `productImages/${filename}`;
+        return this.imageCache.getImage(fullPath);
     }
 
     async getAllProducts(): Promise<Product[]> {

@@ -93,6 +93,16 @@ export class ManagementProductPageComponent extends BaseDestroyableComponent imp
         return this.orders.filter(order => order.isPaid === PaymentStatus.PENDING).length;
     }
 
+    getCompletedOrdersCount(): number {
+        return this.orders.filter(order => order.isPaid === PaymentStatus.COMPLETED).length;
+    }
+
+    getTotalOrdersAmount(): number {
+        return this.orders
+            .filter(order => order.isPaid === PaymentStatus.COMPLETED)
+            .reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+    }
+
     getProductImageUrl(filename: string): string {
         return this.adminProductService.getImageUrl(filename);
     }

@@ -65,6 +65,18 @@
                     <span class="stat-label">En attente</span>
                 </div>
             </div>
+            <div class="stat-card">
+                <div class="stat-icon completed">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="12" y1="1" x2="12" y2="23"/>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ getTotalOrdersAmount() | number }}</span>
+                    <span class="stat-label">FCFA encaissés</span>
+                </div>
+            </div>
         </div>
 
         <!-- Section Produits -->
@@ -244,7 +256,8 @@
                         <tr>
                             <th>Client</th>
                             <th>Contact</th>
-                            <th>Produits</th>
+                            <th>Articles</th>
+                            <th>Montant</th>
                             <th>Date</th>
                             <th>Statut</th>
                         </tr>
@@ -259,7 +272,7 @@
                                 <div class="client-avatar">{{ order.firstName?.charAt(0) }}{{ order.lastName?.charAt(0) }}</div>
                                 <div class="client-info">
                                     <span class="client-name">{{ order.firstName }} {{ order.lastName }}</span>
-                                    <span class="client-id">{{ order.idOrder }}</span>
+                                    <span class="client-id">{{ order.idOrder?.substring(0, 8) }}...</span>
                                 </div>
                             </td>
                             <td class="contact-cell">
@@ -267,9 +280,20 @@
                                 <span class="phone" *ngIf="order.phone">{{ order.phone }}</span>
                             </td>
                             <td class="products-cell">
-                                <div class="products-list">
-                                    <span class="product-tag" *ngFor="let p of order.products">{{ p.title }}</span>
+                                <div class="products-list" *ngIf="order.items?.length; else oldProductsView">
+                                    <span class="product-tag" *ngFor="let item of order.items">
+                                        {{ item.title }} <small>(x{{ item.quantity }})</small>
+                                    </span>
                                 </div>
+                                <ng-template #oldProductsView>
+                                    <div class="products-list">
+                                        <span class="product-tag" *ngFor="let p of order.products">{{ p.title }}</span>
+                                    </div>
+                                </ng-template>
+                            </td>
+                            <td class="amount-cell">
+                                <span class="amount" *ngIf="order.totalAmount">{{ order.totalAmount | number }} F</span>
+                                <span class="amount text-muted" *ngIf="!order.totalAmount">-</span>
                             </td>
                             <td class="date-cell">
                                 {{ order.date | date: 'dd MMM yyyy' }}

@@ -4,6 +4,8 @@ import { AddressInfo } from 'net';
 import { Service } from 'typedi';
 import { MongoConnectionService } from './services/database/mongo.connection.service';
 import { TransactionReconciliationService } from './services/transaction/transaction.reconciliation.service';
+import { ImageCacheService } from './services/cache/image-cache.service';
+import { SftpPoolService } from './services/sftp/sftp-pool.service';
 
 @Service()
 export class Server {
@@ -16,6 +18,8 @@ export class Server {
         private readonly application: Application,
         private readonly mongoConnection: MongoConnectionService,
         private readonly reconciliationService: TransactionReconciliationService,
+        private readonly imageCacheService: ImageCacheService,
+        private readonly sftpPoolService: SftpPoolService,
     ) {}
 
     private static normalizePort(val: number | string): number | string | boolean {
@@ -25,9 +29,15 @@ export class Server {
     async init(): Promise<void> {
         await this.mongoConnection.connect();
 
+        // Initialiser le cache d'images AVANT le listen
+        await this.imageCacheService.initialize();
+
         this.application.app.set('port', Server.appPort);
 
         this.server = http.createServer(this.application.app);
+
+        // Configurer le graceful shutdown
+        this.setupGracefulShutdown();
 
         this.server.listen(Server.appPort);
         this.server.on('error', (error: NodeJS.ErrnoException) => this.onError(error));
@@ -36,6 +46,30 @@ export class Server {
             // Démarrer le service de réconciliation des transactions (vérification toutes les 5 minutes)
             this.reconciliationService.start(5);
         });
+    }
+
+    private setupGracefulShutdown(): void {
+        const shutdown = async (signal: string) => {
+            console.log(`\n🛑 Signal ${signal} recu, arret en cours...`);
+
+            // 1. Arreter le serveur HTTP
+            this.server.close();
+
+            // 2. Arreter la reconciliation
+            this.reconciliationService.stop();
+
+            // 3. Nettoyer le cache d'images
+            await this.imageCacheService.cleanup();
+
+            // 4. Fermer les connexions SFTP
+            await this.sftpPoolService.closeAll();
+
+            console.log('✅ Arret propre termine');
+            process.exit(0);
+        };
+
+        process.on('SIGTERM', () => shutdown('SIGTERM'));
+        process.on('SIGINT', () => shutdown('SIGINT'));
     }
 
     private onError(error: NodeJS.ErrnoException): void {

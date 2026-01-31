@@ -51,10 +51,10 @@ services:
       DB_URL: ${DB_URL}
       MONGO_URI: ${MONGO_URI}
       MAIL_API_KEY: ${MAIL_API_KEY}
-      FTP_HOST: ${FTP_HOST}
-      FTP_PORT: ${FTP_PORT}
-      FTP_USER: ${FTP_USER}
-      FTP_PASSWORD: ${FTP_PASSWORD}
+      FTP_HOST: 51.77.212.203
+      FTP_PORT: 22
+      FTP_USER: junior
+      FTP_PASSWORD: E9hSAcE62ai44a2gm99Y2AUzK4ugL8Qt
       SMTP_HOST: ${SMTP_HOST}
       SMTP_PORT: ${SMTP_PORT}
       SMTP_USER: ${SMTP_USER}
@@ -72,7 +72,7 @@ services:
   client:
     build:
       context: .
-      dockerfile: Dockerfile.client
+      dockerfile: Dockerfile.client.dev
     container_name: ffme-client-dev
     restart: unless-stopped
     depends_on:

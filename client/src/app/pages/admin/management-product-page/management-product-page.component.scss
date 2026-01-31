@@ -122,6 +122,11 @@
             background: rgba($status-warning, 0.1);
             color: $status-warning;
         }
+
+        &.completed {
+            background: rgba($status-success, 0.1);
+            color: $status-success;
+        }
     }
 
     .stat-info {
@@ -772,6 +777,19 @@
             border-radius: $admin-border-radius-sm;
             font-size: $admin-font-size-xs;
             font-weight: $admin-font-weight-medium;
+        }
+    }
+}
+
+.amount-cell {
+    .amount {
+        font-weight: $admin-font-weight-semibold;
+        color: $status-success;
+        white-space: nowrap;
+
+        &.text-muted {
+            color: $admin-text-muted;
+            font-weight: $admin-font-weight-normal;
         }
     }
 }
