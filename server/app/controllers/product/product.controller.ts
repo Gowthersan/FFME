@@ -20,6 +20,43 @@ export class ProductController {
     }
 
     private configureRoutes(): void {
+        /**
+         * @swagger
+         * tags:
+         *   - name: Product
+         *     description: Gestion des produits et commandes
+         */
+
+        /**
+         * @swagger
+         * /api/product/order:
+         *   post:
+         *     summary: Créer une nouvelle commande
+         *     tags: [Product]
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               items:
+         *                 type: array
+         *                 items:
+         *                   type: object
+         *                   properties:
+         *                     productId:
+         *                       type: string
+         *                     quantity:
+         *                       type: number
+         *                     versionLabel:
+         *                       type: string
+         *     responses:
+         *       200:
+         *         description: Commande créée avec succès
+         *       400:
+         *         description: Données invalides
+         */
         this.router.post('/order', async (req: Request, res: Response) => {
             try {
                 const result = await this.productService.validateAndStoreOrder(req.body);
@@ -33,6 +70,37 @@ export class ProductController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/product/order-payment:
+         *   post:
+         *     summary: Initier le paiement d'une commande
+         *     tags: [Product]
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               orderId:
+         *                 type: string
+         *               montant:
+         *                 type: number
+         *               firstName:
+         *                 type: string
+         *               lastName:
+         *                 type: string
+         *               email:
+         *                 type: string
+         *               phone:
+         *                 type: string
+         *     responses:
+         *       200:
+         *         description: Lien de paiement retourné
+         *       400:
+         *         description: Erreur lors de l'initiation du paiement
+         */
         this.router.post('/order-payment', async (req: Request, res: Response) => {
             try {
                 const { orderId, montant, ...clientData } = req.body;
@@ -50,7 +118,24 @@ export class ProductController {
             }
         });
 
-        // Vérifier et finaliser la commande après retour de Singpay
+        /**
+         * @swagger
+         * /api/product/payment/verify/{reference}:
+         *   get:
+         *     summary: Vérifier et finaliser le paiement d'une commande
+         *     tags: [Product]
+         *     parameters:
+         *       - in: path
+         *         name: reference
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Paiement vérifié avec succès
+         *       400:
+         *         description: Paiement non validé
+         */
         this.router.get('/payment/verify/:reference', async (req: Request, res: Response) => {
             try {
                 const reference = req.params.reference as string;
@@ -67,6 +152,39 @@ export class ProductController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/product/{id}/comment:
+         *   post:
+         *     summary: Ajouter un commentaire sur un produit
+         *     tags: [Product]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               author:
+         *                 type: string
+         *               content:
+         *                 type: string
+         *               rating:
+         *                 type: number
+         *     responses:
+         *       200:
+         *         description: Commentaire ajouté avec succès
+         *       400:
+         *         description: Données invalides
+         *       404:
+         *         description: Produit introuvable
+         */
         this.router.post('/:id/comment', async (req: Request, res: Response) => {
             try {
                 const productId = req.params.id as string;
@@ -88,7 +206,18 @@ export class ProductController {
             }
         });
 
-        // Récupération de tous les produits
+        /**
+         * @swagger
+         * /api/product:
+         *   get:
+         *     summary: Récupérer tous les produits
+         *     tags: [Product]
+         *     responses:
+         *       200:
+         *         description: Liste des produits
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/', async (_req: Request, res: Response) => {
             try {
                 const products = await this.productDatabaseService.getAllProducts();
@@ -99,6 +228,29 @@ export class ProductController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/product/image/{filename}:
+         *   get:
+         *     summary: Récupérer l'image d'un produit
+         *     tags: [Product]
+         *     parameters:
+         *       - in: path
+         *         name: filename
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Image du produit
+         *         content:
+         *           image/*:
+         *             schema:
+         *               type: string
+         *               format: binary
+         *       500:
+         *         description: Erreur lors de l'affichage de l'image
+         */
         this.router.get('/image/:filename', async (req: Request, res: Response) => {
             try {
                 const filename = decodeURIComponent(req.params.filename as string);
@@ -112,7 +264,26 @@ export class ProductController {
             }
         });
 
-        // Vérification du paiement
+        /**
+         * @swagger
+         * /api/product/payment/status/{reference}:
+         *   get:
+         *     summary: Obtenir le statut d'un paiement de commande
+         *     tags: [Product]
+         *     parameters:
+         *       - in: path
+         *         name: reference
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Statut du paiement retourné
+         *       404:
+         *         description: Commande introuvable
+         *       502:
+         *         description: Erreur de communication avec Singpay
+         */
         this.router.get('/payment/status/:reference', async (req: Request, res: Response) => {
             try {
                 const reference = req.params.reference as string;
@@ -135,6 +306,24 @@ export class ProductController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/product/{id}/comments:
+         *   get:
+         *     summary: Récupérer les commentaires validés d'un produit
+         *     tags: [Product]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Liste des commentaires validés
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/:id/comments/', async (req: Request, res: Response) => {
             try {
                 const productId = req.params.id as string;
@@ -146,6 +335,24 @@ export class ProductController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/product/{id}:
+         *   get:
+         *     summary: Récupérer un produit par son ID
+         *     tags: [Product]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Détails du produit
+         *       404:
+         *         description: Produit introuvable
+         */
         this.router.get('/:id', async (req: Request, res: Response) => {
             try {
                 const product = await this.productDatabaseService.getProductById(req.params.id as string);

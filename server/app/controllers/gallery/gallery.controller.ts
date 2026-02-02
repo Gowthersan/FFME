@@ -16,6 +16,25 @@ export class GalleryController {
     }
 
     private configureRoutes(): void {
+        /**
+         * @swagger
+         * tags:
+         *   - name: Gallery
+         *     description: Galerie photo publique
+         */
+
+        /**
+         * @swagger
+         * /api/gallery:
+         *   get:
+         *     summary: Récupérer toutes les photos de la galerie
+         *     tags: [Gallery]
+         *     responses:
+         *       200:
+         *         description: Liste des photos
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/', async (req: Request, res: Response) => {
             try {
                 const photos = await this.galleryDbService.getAll();
@@ -26,6 +45,24 @@ export class GalleryController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/gallery/event/{eventName}:
+         *   get:
+         *     summary: Récupérer les photos d'un événement
+         *     tags: [Gallery]
+         *     parameters:
+         *       - in: path
+         *         name: eventName
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Liste des photos de l'événement
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/event/:eventName', async (req: Request, res: Response) => {
             try {
                 const eventName = req.params.eventName as string;
@@ -37,6 +74,29 @@ export class GalleryController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/gallery/image/{filename}:
+         *   get:
+         *     summary: Récupérer une image de la galerie
+         *     tags: [Gallery]
+         *     parameters:
+         *       - in: path
+         *         name: filename
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Image retournée
+         *         content:
+         *           image/*:
+         *             schema:
+         *               type: string
+         *               format: binary
+         *       500:
+         *         description: Erreur lors de l'affichage de l'image
+         */
         this.router.get('/image/:filename', imageRateLimiter, connectionLimiter, async (req: Request, res: Response) => {
             const filename = req.params.filename as string;
 
@@ -51,6 +111,24 @@ export class GalleryController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/gallery/{id}:
+         *   get:
+         *     summary: Récupérer une photo par son ID
+         *     tags: [Gallery]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Détails de la photo
+         *       404:
+         *         description: Photo introuvable
+         */
         this.router.get('/:id', async (req: Request, res: Response) => {
             try {
                 const id = req.params.id as string;

@@ -16,6 +16,52 @@ export class MembershipController {
     private configureRoutes(): void {
         const upload = multer({ dest: 'uploads/' }); // dossier temporaire
 
+        /**
+         * @swagger
+         * tags:
+         *   - name: Membership
+         *     description: Gestion des adhésions
+         */
+
+        /**
+         * @swagger
+         * /api/membership:
+         *   post:
+         *     summary: Créer une nouvelle demande d'adhésion
+         *     tags: [Membership]
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         multipart/form-data:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               firstName:
+         *                 type: string
+         *               lastName:
+         *                 type: string
+         *               email:
+         *                 type: string
+         *               phone:
+         *                 type: string
+         *               cv:
+         *                 type: string
+         *                 format: binary
+         *               photo:
+         *                 type: string
+         *                 format: binary
+         *               id:
+         *                 type: string
+         *                 format: binary
+         *               formulaire:
+         *                 type: string
+         *                 format: binary
+         *     responses:
+         *       201:
+         *         description: Adhésion créée avec succès
+         *       400:
+         *         description: Données invalides
+         */
         this.router.post(
             '/',
             upload.fields([
@@ -70,11 +116,60 @@ export class MembershipController {
             },
         );
 
+        /**
+         * @swagger
+         * /api/membership/{id}/exists:
+         *   get:
+         *     summary: Vérifier si une adhésion existe
+         *     tags: [Membership]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Statut d'existence de l'adhésion
+         */
         this.router.get('/:id/exists', (req: Request, res: Response) => {
             const exists = !!this.membershipService.getMembershipById(req.params.id as string);
             return res.status(StatusCodes.OK).json({ exists });
         });
 
+        /**
+         * @swagger
+         * /api/membership/{id}/payment:
+         *   post:
+         *     summary: Initier le paiement d'une adhésion
+         *     tags: [Membership]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               paymentMethod:
+         *                 type: string
+         *                 enum: [singpay, rib]
+         *               montant:
+         *                 type: number
+         *                 enum: [15000, 20000]
+         *     responses:
+         *       200:
+         *         description: Paiement initié avec succès
+         *       400:
+         *         description: Montant invalide
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.post('/:id/payment', async (req: Request, res: Response) => {
             const { paymentMethod, montant } = req.body;
             const id = req.params.id as string;
@@ -104,7 +199,26 @@ export class MembershipController {
             }
         });
 
-        // Vérifier et finaliser le paiement après retour de Singpay
+        /**
+         * @swagger
+         * /api/membership/payment/verify/{reference}:
+         *   get:
+         *     summary: Vérifier et finaliser le paiement d'une adhésion
+         *     tags: [Membership]
+         *     parameters:
+         *       - in: path
+         *         name: reference
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Paiement vérifié avec succès
+         *       400:
+         *         description: Paiement non validé
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/payment/verify/:reference', async (req, res) => {
             const reference = req.params.reference;
 

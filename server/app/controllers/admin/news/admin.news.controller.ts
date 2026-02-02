@@ -19,12 +19,51 @@ export class AdminNewsController {
     private configureRoutes(): void {
         const upload = multer();
 
+        /**
+         * @swagger
+         * tags:
+         *   - name: Admin - News
+         *     description: Gestion des actualités (admin)
+         */
+
+        /**
+         * @swagger
+         * /api/admin/news:
+         *   get:
+         *     summary: Récupérer toutes les actualités
+         *     tags: [Admin - News]
+         *     responses:
+         *       200:
+         *         description: Liste des actualités
+         */
         this.router.get('/', async (_req: Request, res: Response) => {
             const newsList = await this.newsDbService.getAll();
             return res.status(StatusCodes.OK).json(newsList);
         });
 
-        // Image - DOIT être avant /:id pour éviter que "image" soit interprété comme un ID
+        /**
+         * @swagger
+         * /api/admin/news/image/{filename}:
+         *   get:
+         *     summary: Récupérer l'image d'une actualité
+         *     tags: [Admin - News]
+         *     parameters:
+         *       - in: path
+         *         name: filename
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Image de l'actualité
+         *         content:
+         *           image/*:
+         *             schema:
+         *               type: string
+         *               format: binary
+         *       500:
+         *         description: Erreur lors de l'affichage de l'image
+         */
         this.router.get('/image/:filename', imageRateLimiter, connectionLimiter, async (req: Request, res: Response) => {
             try {
                 const { stream, mime } = await this.newsDbService.streamImage(decodeURIComponent(req.params.filename as string));
@@ -37,6 +76,24 @@ export class AdminNewsController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/news/{id}:
+         *   get:
+         *     summary: Récupérer une actualité par son ID
+         *     tags: [Admin - News]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Détails de l'actualité
+         *       404:
+         *         description: Actualité introuvable
+         */
         this.router.get('/:id', async (req: Request, res: Response) => {
             const news = await this.newsDbService.getById(req.params.id as string);
             if (!news) {
@@ -45,6 +102,38 @@ export class AdminNewsController {
             return res.status(StatusCodes.OK).json(news);
         });
 
+        /**
+         * @swagger
+         * /api/admin/news:
+         *   post:
+         *     summary: Créer une nouvelle actualité
+         *     tags: [Admin - News]
+         *     security:
+         *       - bearerAuth: []
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         multipart/form-data:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               title:
+         *                 type: string
+         *               description:
+         *                 type: string
+         *               date:
+         *                 type: string
+         *               externalLink:
+         *                 type: string
+         *               image:
+         *                 type: string
+         *                 format: binary
+         *     responses:
+         *       201:
+         *         description: Actualité créée
+         *       400:
+         *         description: Champs requis manquants
+         */
         this.router.post('/', upload.single('image'), authenticateToken, async (req: Request, res: Response) => {
             const { title, description, date, externalLink } = req.body;
             const file = req.file;
@@ -62,6 +151,41 @@ export class AdminNewsController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/news/{id}:
+         *   put:
+         *     summary: Modifier une actualité
+         *     tags: [Admin - News]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               title:
+         *                 type: string
+         *               description:
+         *                 type: string
+         *               date:
+         *                 type: string
+         *               externalLink:
+         *                 type: string
+         *     responses:
+         *       200:
+         *         description: Actualité mise à jour
+         *       404:
+         *         description: Actualité non trouvée
+         */
         this.router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
             const { title, description, date, externalLink } = req.body;
             if (!title || !description || !date) {
@@ -80,6 +204,26 @@ export class AdminNewsController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/news/{id}:
+         *   delete:
+         *     summary: Supprimer une actualité
+         *     tags: [Admin - News]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Actualité supprimée
+         *       404:
+         *         description: Actualité non trouvée
+         */
         this.router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
             try {
                 const deleted = await this.newsDbService.deleteNews(req.params.id as string);

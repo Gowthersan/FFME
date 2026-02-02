@@ -16,6 +16,25 @@ export class NewsController {
     }
 
     private configureRoutes(): void {
+        /**
+         * @swagger
+         * tags:
+         *   - name: News
+         *     description: Actualités publiques
+         */
+
+        /**
+         * @swagger
+         * /api/news:
+         *   get:
+         *     summary: Récupérer toutes les actualités
+         *     tags: [News]
+         *     responses:
+         *       200:
+         *         description: Liste des actualités
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/', async (_req: Request, res: Response) => {
             try {
                 const newsList = await this.newsDbService.getAll();
@@ -26,6 +45,29 @@ export class NewsController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/news/image/{filename}:
+         *   get:
+         *     summary: Récupérer l'image d'une actualité
+         *     tags: [News]
+         *     parameters:
+         *       - in: path
+         *         name: filename
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Image de l'actualité
+         *         content:
+         *           image/*:
+         *             schema:
+         *               type: string
+         *               format: binary
+         *       500:
+         *         description: Erreur lors de l'affichage de l'image
+         */
         this.router.get('/image/:filename', imageRateLimiter, connectionLimiter, async (req: Request, res: Response) => {
             try {
                 const { stream, mime } = await this.newsDbService.streamImage(decodeURIComponent(req.params.filename as string));
@@ -38,6 +80,24 @@ export class NewsController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/news/{id}:
+         *   get:
+         *     summary: Récupérer une actualité par son ID
+         *     tags: [News]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Détails de l'actualité
+         *       404:
+         *         description: Actualité introuvable
+         */
         this.router.get('/:id', async (req: Request, res: Response) => {
             try {
                 const news = await this.newsDbService.getById(req.params.id as string);

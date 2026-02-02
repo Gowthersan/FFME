@@ -119,19 +119,46 @@ export class WebhookController {
 
     private configureRoutes(): void {
         /**
-         * Webhook Singpay - Reçoit les notifications de paiement
-         * POST /api/webhook/singpay
-         *
-         * Body attendu de Singpay (à adapter selon leur documentation):
-         * {
-         *   reference: string,       // Notre référence unique
-         *   transactionId: string,   // ID Singpay
-         *   status: string,          // "Disbursement", "Failed", "Pending"
-         *   amount: number,
-         *   result?: string,         // "Success", "TimeOutError", "Failed"
-         *   paidAt?: string,
-         *   payerPhone?: string,
-         * }
+         * @swagger
+         * tags:
+         *   - name: Webhook
+         *     description: Webhooks et transactions Singpay
+         */
+
+        /**
+         * @swagger
+         * /api/webhook/singpay:
+         *   post:
+         *     summary: Webhook Singpay - Reçoit les notifications de paiement
+         *     tags: [Webhook]
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               reference:
+         *                 type: string
+         *               transactionId:
+         *                 type: string
+         *               status:
+         *                 type: string
+         *               result:
+         *                 type: string
+         *               amount:
+         *                 type: number
+         *               paidAt:
+         *                 type: string
+         *               payerPhone:
+         *                 type: string
+         *     responses:
+         *       200:
+         *         description: Webhook traité avec succès
+         *       400:
+         *         description: Référence manquante
+         *       500:
+         *         description: Erreur serveur
          */
         this.router.post('/singpay', async (req: Request, res: Response) => {
             const { reference, transactionId, status, result, amount, paidAt, payerPhone, payerName, type } = req.body;
@@ -257,8 +284,22 @@ export class WebhookController {
         });
 
         /**
-         * Vérification manuelle d'une transaction
-         * GET /api/webhook/verify/:reference
+         * @swagger
+         * /api/webhook/verify/{reference}:
+         *   get:
+         *     summary: Vérification manuelle d'une transaction
+         *     tags: [Webhook]
+         *     parameters:
+         *       - in: path
+         *         name: reference
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Détails de la transaction
+         *       404:
+         *         description: Transaction non trouvée
          */
         this.router.get('/verify/:reference', async (req: Request, res: Response) => {
             const reference = req.params.reference as string;
@@ -288,8 +329,33 @@ export class WebhookController {
         });
 
         /**
-         * Liste des transactions avec filtres et affichage console
-         * GET /api/webhook/transactions?status=completed|pending|failed|all&type=donation|membership|product&limit=50&console=true
+         * @swagger
+         * /api/webhook/transactions:
+         *   get:
+         *     summary: Liste des transactions avec filtres
+         *     tags: [Webhook]
+         *     parameters:
+         *       - in: query
+         *         name: status
+         *         schema:
+         *           type: string
+         *           enum: [completed, pending, failed, all]
+         *       - in: query
+         *         name: type
+         *         schema:
+         *           type: string
+         *           enum: [donation, membership, product]
+         *       - in: query
+         *         name: limit
+         *         schema:
+         *           type: number
+         *       - in: query
+         *         name: console
+         *         schema:
+         *           type: boolean
+         *     responses:
+         *       200:
+         *         description: Liste des transactions
          */
         this.router.get('/transactions', async (req: Request, res: Response) => {
             try {
@@ -334,11 +400,32 @@ export class WebhookController {
         });
 
         /**
-         * Raccourcis pour les statuts courants avec affichage console automatique
-         * GET /api/webhook/transactions/completed
-         * GET /api/webhook/transactions/pending
-         * GET /api/webhook/transactions/failed
-         * GET /api/webhook/transactions/all
+         * @swagger
+         * /api/webhook/transactions/{status}:
+         *   get:
+         *     summary: Raccourcis pour filtrer par statut
+         *     tags: [Webhook]
+         *     parameters:
+         *       - in: path
+         *         name: status
+         *         required: true
+         *         schema:
+         *           type: string
+         *           enum: [completed, pending, failed, initiated, timeout, cancelled, all]
+         *       - in: query
+         *         name: type
+         *         schema:
+         *           type: string
+         *           enum: [donation, membership, product]
+         *       - in: query
+         *         name: limit
+         *         schema:
+         *           type: number
+         *     responses:
+         *       200:
+         *         description: Liste des transactions filtrées
+         *       400:
+         *         description: Statut invalide
          */
         this.router.get('/transactions/:status', async (req: Request, res: Response) => {
             try {
@@ -386,8 +473,14 @@ export class WebhookController {
         });
 
         /**
-         * Statistiques des transactions avec affichage console
-         * GET /api/webhook/stats
+         * @swagger
+         * /api/webhook/stats:
+         *   get:
+         *     summary: Statistiques des transactions
+         *     tags: [Webhook]
+         *     responses:
+         *       200:
+         *         description: Statistiques des transactions
          */
         this.router.get('/stats', async (_req: Request, res: Response) => {
             try {
@@ -423,8 +516,14 @@ export class WebhookController {
         });
 
         /**
-         * Affiche toutes les transactions en attente (initiated + pending)
-         * GET /api/webhook/waiting
+         * @swagger
+         * /api/webhook/waiting:
+         *   get:
+         *     summary: Transactions en attente (initiated + pending)
+         *     tags: [Webhook]
+         *     responses:
+         *       200:
+         *         description: Liste des transactions en attente
          */
         this.router.get('/waiting', async (_req: Request, res: Response) => {
             try {
@@ -472,8 +571,14 @@ export class WebhookController {
         });
 
         /**
-         * Résumé rapide des transactions dans la console
-         * GET /api/webhook/summary
+         * @swagger
+         * /api/webhook/summary:
+         *   get:
+         *     summary: Résumé rapide des transactions
+         *     tags: [Webhook]
+         *     responses:
+         *       200:
+         *         description: Résumé des transactions avec les 5 dernières
          */
         this.router.get('/summary', async (_req: Request, res: Response) => {
             try {
@@ -509,8 +614,18 @@ export class WebhookController {
         });
 
         /**
-         * Force une réconciliation manuelle des transactions en attente
-         * POST /api/webhook/reconcile (protégé par authentification admin)
+         * @swagger
+         * /api/webhook/reconcile:
+         *   post:
+         *     summary: Force une réconciliation manuelle des transactions en attente
+         *     tags: [Webhook]
+         *     security:
+         *       - bearerAuth: []
+         *     responses:
+         *       200:
+         *         description: Réconciliation terminée
+         *       401:
+         *         description: Non autorisé
          */
         this.router.post('/reconcile', authenticateToken, async (_req: Request, res: Response) => {
             try {

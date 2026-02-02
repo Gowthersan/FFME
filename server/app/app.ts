@@ -46,8 +46,25 @@ export class Application {
             swaggerDefinition: {
                 openapi: '3.0.0',
                 info: {
-                    title: 'Cadriciel Serveur',
+                    title: 'API Fondation François Meye',
                     version: '1.0.0',
+                    description: 'API REST pour la gestion des dons, adhésions, produits, actualités et galerie photo de la Fondation François Meye.',
+                },
+                servers: [
+                    {
+                        url: '/api',
+                        description: 'Serveur API',
+                    },
+                ],
+                components: {
+                    securitySchemes: {
+                        bearerAuth: {
+                            type: 'http',
+                            scheme: 'bearer',
+                            bearerFormat: 'JWT',
+                            description: 'Token JWT obtenu via /api/admin/login',
+                        },
+                    },
                 },
             },
             apis: ['**/*.ts'],

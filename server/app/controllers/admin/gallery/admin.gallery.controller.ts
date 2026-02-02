@@ -19,6 +19,25 @@ export class AdminGalleryController {
     private configureRoutes(): void {
         const upload = multer(); // Utilisation de mémoire, pas de stockage sur disque
 
+        /**
+         * @swagger
+         * tags:
+         *   - name: Admin - Gallery
+         *     description: Gestion de la galerie photo (admin)
+         */
+
+        /**
+         * @swagger
+         * /api/admin/gallery:
+         *   get:
+         *     summary: Récupérer toutes les photos
+         *     tags: [Admin - Gallery]
+         *     responses:
+         *       200:
+         *         description: Liste des photos
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/', async (req: Request, res: Response) => {
             try {
                 const photos = await this.galleryDbService.getAll();
@@ -29,7 +48,29 @@ export class AdminGalleryController {
             }
         });
 
-        // Image - DOIT être avant /:id pour éviter que "image" soit interprété comme un ID
+        /**
+         * @swagger
+         * /api/admin/gallery/image/{filename}:
+         *   get:
+         *     summary: Récupérer une image de la galerie
+         *     tags: [Admin - Gallery]
+         *     parameters:
+         *       - in: path
+         *         name: filename
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Image retournée
+         *         content:
+         *           image/*:
+         *             schema:
+         *               type: string
+         *               format: binary
+         *       500:
+         *         description: Erreur lors de l'affichage de l'image
+         */
         this.router.get('/image/:filename', imageRateLimiter, connectionLimiter, async (req: Request, res: Response) => {
             const filename = req.params.filename as string;
 
@@ -44,6 +85,24 @@ export class AdminGalleryController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/gallery/{id}:
+         *   get:
+         *     summary: Récupérer une photo par son ID
+         *     tags: [Admin - Gallery]
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Détails de la photo
+         *       404:
+         *         description: Photo introuvable
+         */
         this.router.get('/:id', async (req: Request, res: Response) => {
             const id = req.params.id as string;
             const photo = await this.galleryDbService.getById(id);
@@ -53,7 +112,36 @@ export class AdminGalleryController {
             return res.status(StatusCodes.OK).json(photo);
         });
 
-        // ➕ Upload de nouvelles photos (multiple)
+        /**
+         * @swagger
+         * /api/admin/gallery:
+         *   post:
+         *     summary: Uploader de nouvelles photos
+         *     tags: [Admin - Gallery]
+         *     security:
+         *       - bearerAuth: []
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         multipart/form-data:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               eventName:
+         *                 type: string
+         *               description:
+         *                 type: string
+         *               images:
+         *                 type: array
+         *                 items:
+         *                   type: string
+         *                   format: binary
+         *     responses:
+         *       201:
+         *         description: Photos uploadées
+         *       400:
+         *         description: Champs requis manquants
+         */
         this.router.post('/', upload.array('images', 20), authenticateToken, async (req: Request, res: Response) => {
             const { eventName, description } = req.body;
             const files = req.files as Express.Multer.File[];
@@ -71,7 +159,37 @@ export class AdminGalleryController {
             }
         });
 
-        // ✏️ Modification d'une photo
+        /**
+         * @swagger
+         * /api/admin/gallery/{id}:
+         *   put:
+         *     summary: Modifier une photo
+         *     tags: [Admin - Gallery]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               eventName:
+         *                 type: string
+         *               description:
+         *                 type: string
+         *     responses:
+         *       200:
+         *         description: Photo mise à jour
+         *       404:
+         *         description: Photo non trouvée
+         */
         this.router.put('/:id', authenticateToken, async (req: Request, res: Response) => {
             const id = req.params.id as string;
             const { eventName, description } = req.body;
@@ -92,7 +210,26 @@ export class AdminGalleryController {
             }
         });
 
-        // 🗑 Suppression d'une photo
+        /**
+         * @swagger
+         * /api/admin/gallery/{id}:
+         *   delete:
+         *     summary: Supprimer une photo
+         *     tags: [Admin - Gallery]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Photo supprimée
+         *       404:
+         *         description: Photo introuvable
+         */
         this.router.delete('/:id', authenticateToken, async (req: Request, res: Response) => {
             const id = req.params.id as string;
 

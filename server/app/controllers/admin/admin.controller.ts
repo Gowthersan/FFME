@@ -36,6 +36,42 @@ export class AdminController {
     }
 
     private configureRoutes(): void {
+        /**
+         * @swagger
+         * tags:
+         *   - name: Admin
+         *     description: Administration du site
+         *   - name: Admin - Members
+         *     description: Gestion des membres (admin)
+         *   - name: Admin - Donations
+         *     description: Gestion des dons (admin)
+         */
+
+        /**
+         * @swagger
+         * /api/admin/login:
+         *   post:
+         *     summary: Connexion administrateur
+         *     tags: [Admin]
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               email:
+         *                 type: string
+         *               password:
+         *                 type: string
+         *     responses:
+         *       200:
+         *         description: Connexion réussie, token JWT retourné
+         *       400:
+         *         description: Données invalides
+         *       401:
+         *         description: Identifiants incorrects
+         */
         this.router.post('/login', async (req, res) => {
             const parseResult = adminLoginSchema.safeParse(req.body);
 
@@ -55,7 +91,22 @@ export class AdminController {
             return res.status(401).json({ success: false, message: result.message });
         });
 
-        // Endpoint stats pour le dashboard
+        /**
+         * @swagger
+         * /api/admin/stats:
+         *   get:
+         *     summary: Récupérer les statistiques du dashboard
+         *     tags: [Admin]
+         *     security:
+         *       - bearerAuth: []
+         *     responses:
+         *       200:
+         *         description: Statistiques du dashboard
+         *       401:
+         *         description: Non autorisé
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/stats', authenticateToken, async (_req, res) => {
             try {
                 const [donations, members, products, orders, news, photos, transactionStats, recentTransactions] = await Promise.all([
@@ -146,7 +197,22 @@ export class AdminController {
             }
         });
 
-        // Endpoint pour les données du graphique d'évolution temporelle
+        /**
+         * @swagger
+         * /api/admin/stats/charts:
+         *   get:
+         *     summary: Récupérer les données pour les graphiques du dashboard
+         *     tags: [Admin]
+         *     security:
+         *       - bearerAuth: []
+         *     responses:
+         *       200:
+         *         description: Données des graphiques (dons, adhésions par mois)
+         *       401:
+         *         description: Non autorisé
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/stats/charts', authenticateToken, async (_req, res) => {
             try {
                 const [donations, members] = await Promise.all([
@@ -199,6 +265,22 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/members:
+         *   get:
+         *     summary: Récupérer tous les membres
+         *     tags: [Admin - Members]
+         *     security:
+         *       - bearerAuth: []
+         *     responses:
+         *       200:
+         *         description: Liste des membres
+         *       401:
+         *         description: Non autorisé
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/members', authenticateToken, async (req, res) => {
             try {
                 const members = await this.memberDbService.getAll();
@@ -208,6 +290,28 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/member/{id}:
+         *   get:
+         *     summary: Récupérer un membre par son ID
+         *     tags: [Admin - Members]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Détails du membre
+         *       404:
+         *         description: Membre non trouvé
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/member/:id', authenticateToken, async (req, res) => {
             try {
                 const data = await this.memberDbService.getById(req.params.id as string);
@@ -221,6 +325,36 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/member/{id}/document/{fileId}:
+         *   get:
+         *     summary: Récupérer un document d'un membre
+         *     tags: [Admin - Members]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *       - in: path
+         *         name: fileId
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Document retourné
+         *         content:
+         *           application/octet-stream:
+         *             schema:
+         *               type: string
+         *               format: binary
+         *       500:
+         *         description: Erreur lors du téléchargement
+         */
         this.router.get('/member/:id/document/:fileId', authenticateToken, async (req, res) => {
             const fileId = req.params.fileId as string;
 
@@ -235,6 +369,38 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/member/{id}/status:
+         *   patch:
+         *     summary: Modifier le statut de paiement d'un membre
+         *     tags: [Admin - Members]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               status:
+         *                 type: string
+         *                 enum: [Waiting, Completed, Failure]
+         *     responses:
+         *       200:
+         *         description: Statut mis à jour
+         *       400:
+         *         description: Statut invalide
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.patch('/member/:id/status', authenticateToken, async (req, res) => {
             const { status } = req.body;
 
@@ -250,6 +416,35 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/member/{id}/validation:
+         *   patch:
+         *     summary: Modifier la validation d'un membre
+         *     tags: [Admin - Members]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               isValidated:
+         *                 type: boolean
+         *     responses:
+         *       200:
+         *         description: Certification mise à jour
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.patch('/member/:id/validation', authenticateToken, async (req, res) => {
             const { isValidated } = req.body;
             try {
@@ -260,6 +455,26 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/member/{id}:
+         *   delete:
+         *     summary: Supprimer un membre
+         *     tags: [Admin - Members]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Membre supprimé avec succès
+         *       500:
+         *         description: Erreur lors de la suppression
+         */
         this.router.delete('/member/:id', authenticateToken, async (req, res) => {
             try {
                 const id = req.params.id as string;
@@ -271,6 +486,20 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/donations:
+         *   get:
+         *     summary: Récupérer tous les dons
+         *     tags: [Admin - Donations]
+         *     security:
+         *       - bearerAuth: []
+         *     responses:
+         *       200:
+         *         description: Liste des dons
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/donations', authenticateToken, async (req, res) => {
             try {
                 const allDonations = await this.donationDatabaseService.getAll();
@@ -280,6 +509,28 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/donation/{id}:
+         *   get:
+         *     summary: Récupérer un don par son ID
+         *     tags: [Admin - Donations]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Détails du don
+         *       404:
+         *         description: Don non trouvé
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.get('/donation/:id', authenticateToken, async (req, res) => {
             const id = req.params.id as string;
             try {
@@ -293,6 +544,38 @@ export class AdminController {
             }
         });
 
+        /**
+         * @swagger
+         * /api/admin/donation/{id}/status:
+         *   patch:
+         *     summary: Modifier le statut d'un don
+         *     tags: [Admin - Donations]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: id
+         *         required: true
+         *         schema:
+         *           type: string
+         *     requestBody:
+         *       required: true
+         *       content:
+         *         application/json:
+         *           schema:
+         *             type: object
+         *             properties:
+         *               status:
+         *                 type: string
+         *                 enum: [Waiting, Completed, Failure]
+         *     responses:
+         *       200:
+         *         description: Statut mis à jour
+         *       400:
+         *         description: Statut requis
+         *       500:
+         *         description: Erreur serveur
+         */
         this.router.patch('/donation/:id/status', authenticateToken, async (req, res) => {
             const id = req.params.id as string;
             const { status } = req.body;
