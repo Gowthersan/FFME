@@ -47,6 +47,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: 3000
+      DOCKER: 'true'
       JWT_SECRET: ${JWT_SECRET}
       DB_URL: ${DB_URL}
       MONGO_URI: ${MONGO_URI}

@@ -92,8 +92,8 @@ export class FormPhotoComponent {
             }
         }
 
+        // Emettre les donnees - le parent gere la fermeture du modal
         this.submitted.emit(formData);
-        this.close();
     }
 
     close() {

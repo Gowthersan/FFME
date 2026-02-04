@@ -17,7 +17,13 @@ export class AdminNewsController {
     }
 
     private configureRoutes(): void {
-        const upload = multer();
+        // Configuration multer avec limite de taille (100 Mo par fichier)
+        const upload = multer({
+            storage: multer.memoryStorage(),
+            limits: {
+                fileSize: 100 * 1024 * 1024, // 100 Mo max par fichier
+            },
+        });
 
         /**
          * @swagger

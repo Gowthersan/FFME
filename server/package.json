@@ -5,7 +5,8 @@
     "private": true,
     "scripts": {
         "start": "nodemon",
-        "build": "rimraf out && tsc --project tsconfig.app.json",
+        "build": "rimraf out && tsc --project tsconfig.app.json && npm run build:swagger",
+    "build:swagger": "ts-node scripts/generate-swagger.ts",
         "format": "prettier --config ../.prettierrc.yaml --write \"app/**/*\"",
         "lint": "eslint -c .eslintrc.json \"./app/**/*.ts\" --format stylish",
         "lint:fix": "npm run lint -- --fix",

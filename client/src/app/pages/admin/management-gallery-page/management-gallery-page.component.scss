@@ -248,6 +248,13 @@
         color: $admin-text-primary;
         margin: 0 0 $admin-spacing-xs 0;
         @include admin-text-truncate;
+        cursor: pointer;
+    }
+
+    &__footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     &__count {
@@ -259,6 +266,26 @@
 
         i {
             font-size: 12px;
+        }
+    }
+
+    &__delete {
+        width: 32px;
+        height: 32px;
+        border-radius: $admin-border-radius;
+        background: transparent;
+        border: 1px solid transparent;
+        color: $admin-text-muted;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        @include admin-transition(all);
+
+        &:hover {
+            background: rgba($status-danger, 0.1);
+            border-color: $status-danger;
+            color: $status-danger;
         }
     }
 }

@@ -135,4 +135,44 @@ export class GalleryDatabaseFtpService {
             this.sftpPool.release(sftp);
         }
     }
+
+    async deleteEvent(eventName: string): Promise<{ success: boolean; deletedCount: number }> {
+        const photos = await GalleryPhotoModel.find({ eventName });
+        if (photos.length === 0) {
+            return { success: true, deletedCount: 0 };
+        }
+
+        const sftp = await this.sftpPool.acquire();
+        let deletedCount = 0;
+
+        try {
+            for (const photo of photos) {
+                try {
+                    await sftp.delete(photo.image);
+                    await this.imageCache.removeFromCache(photo.image);
+                    deletedCount++;
+                } catch (err) {
+                    console.error(`Erreur suppression fichier ${photo.image}:`, err);
+                }
+            }
+
+            // Supprimer le dossier de l'evenement si vide
+            try {
+                const remoteDir = `galleryImages/${eventName}`;
+                await sftp.rmdir(remoteDir, true);
+            } catch {
+                // Le dossier n'existe peut-etre pas ou n'est pas vide
+            }
+
+            // Supprimer toutes les photos de la BDD
+            await GalleryPhotoModel.deleteMany({ eventName });
+
+            return { success: true, deletedCount };
+        } catch (err) {
+            console.error('Erreur suppression evenement:', err);
+            return { success: false, deletedCount };
+        } finally {
+            this.sftpPool.release(sftp);
+        }
+    }
 }

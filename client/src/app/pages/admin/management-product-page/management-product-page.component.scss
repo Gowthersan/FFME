@@ -597,6 +597,12 @@
             }
         }
 
+        .comment-header-right {
+            display: flex;
+            align-items: center;
+            gap: $admin-spacing-md;
+        }
+
         .comment-rating {
             display: flex;
             align-items: center;
@@ -610,66 +616,38 @@
                 height: 16px;
             }
         }
+
+        .btn-delete-comment {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            border: none;
+            border-radius: $admin-border-radius-sm;
+            background: transparent;
+            color: $admin-text-muted;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            @include admin-transition(all);
+
+            svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            &:hover {
+                background: rgba($status-danger, 0.1);
+                color: $status-danger;
+            }
+        }
     }
 
     .comment-content {
         color: $admin-text-secondary;
         font-size: $admin-font-size-sm;
         line-height: $admin-line-height-normal;
-        margin: 0 0 $admin-spacing-sm;
-    }
-
-    .comment-actions {
-        display: flex;
-        gap: $admin-spacing-sm;
-        flex-wrap: wrap;
-
-        .validated {
-            display: inline-flex;
-            align-items: center;
-            gap: $admin-spacing-xs;
-            padding: $admin-spacing-xs $admin-spacing-sm;
-            background: rgba($status-success, 0.1);
-            color: $status-success;
-            border-radius: $admin-border-radius-sm;
-            font-size: $admin-font-size-xs;
-            font-weight: $admin-font-weight-semibold;
-
-            svg {
-                width: 14px;
-                height: 14px;
-            }
-        }
-
-        .btn-validate,
-        .btn-delete-comment {
-            padding: $admin-spacing-xs $admin-spacing-sm;
-            border: none;
-            border-radius: $admin-border-radius-sm;
-            font-size: $admin-font-size-xs;
-            font-weight: $admin-font-weight-semibold;
-            cursor: pointer;
-            @include admin-transition(all);
-        }
-
-        .btn-validate {
-            background: $status-success;
-            color: white;
-
-            &:hover {
-                background: color.adjust($status-success, $lightness: -10%);
-            }
-        }
-
-        .btn-delete-comment {
-            background: rgba($status-danger, 0.1);
-            color: $status-danger;
-
-            &:hover {
-                background: $status-danger;
-                color: white;
-            }
-        }
+        margin: 0;
     }
 }
 

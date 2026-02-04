@@ -5,4 +5,5 @@ export enum ApiEndpoints {
     MEMBERSHIP = '/membership/',
     GALLERY = '/gallery/',
     NEWS = '/news/',
+    VIDEO = '/video/',
 }

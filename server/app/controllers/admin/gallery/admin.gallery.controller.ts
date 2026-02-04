@@ -17,7 +17,14 @@ export class AdminGalleryController {
     }
 
     private configureRoutes(): void {
-        const upload = multer(); // Utilisation de mémoire, pas de stockage sur disque
+        // Configuration multer avec limite de taille (100 Mo par fichier)
+        const upload = multer({
+            storage: multer.memoryStorage(),
+            limits: {
+                fileSize: 100 * 1024 * 1024, // 100 Mo max par fichier
+                files: 20, // Maximum 20 fichiers
+            },
+        });
 
         /**
          * @swagger
@@ -146,16 +153,19 @@ export class AdminGalleryController {
             const { eventName, description } = req.body;
             const files = req.files as Express.Multer.File[];
 
+            console.log(`[POST /gallery] Debut upload: ${files?.length || 0} fichiers pour "${eventName}"`);
+
             if (!files || files.length === 0 || !eventName || !description) {
                 return res.status(StatusCodes.BAD_REQUEST).json({ success: false, message: 'Champs requis manquants.' });
             }
 
             try {
                 const savedPhotos = await this.galleryDbService.uploadPhotos(files, eventName, description);
+                console.log(`[POST /gallery] Upload termine: ${savedPhotos.length} photos sauvegardees`);
                 return res.status(StatusCodes.CREATED).json(savedPhotos);
             } catch (err) {
-                console.error('[POST] Erreur upload FTP :', err);
-                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Erreur serveur.' });
+                console.error('[POST /gallery] Erreur upload:', err);
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: `Erreur serveur: ${(err as Error).message}` });
             }
         });
 
@@ -241,6 +251,48 @@ export class AdminGalleryController {
                 return res.status(StatusCodes.OK).json({ success: true, message: 'Photo supprimée avec succès' });
             } catch (err) {
                 console.error('❌ [DELETE] Erreur suppression FTP :', err);
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Erreur serveur' });
+            }
+        });
+
+        /**
+         * @swagger
+         * /api/admin/gallery/event/{eventName}:
+         *   delete:
+         *     summary: Supprimer un evenement et toutes ses photos
+         *     tags: [Admin - Gallery]
+         *     security:
+         *       - bearerAuth: []
+         *     parameters:
+         *       - in: path
+         *         name: eventName
+         *         required: true
+         *         schema:
+         *           type: string
+         *     responses:
+         *       200:
+         *         description: Evenement supprime
+         *       500:
+         *         description: Erreur serveur
+         */
+        this.router.delete('/event/:eventName', authenticateToken, async (req: Request, res: Response) => {
+            const eventName = decodeURIComponent(req.params.eventName as string);
+
+            console.log(`[DELETE /gallery/event] Suppression de l'evenement: "${eventName}"`);
+
+            try {
+                const result = await this.galleryDbService.deleteEvent(eventName);
+                if (result.success) {
+                    console.log(`[DELETE /gallery/event] ${result.deletedCount} photos supprimees`);
+                    return res.status(StatusCodes.OK).json({
+                        success: true,
+                        message: `Evenement "${eventName}" supprime avec ${result.deletedCount} photo(s)`,
+                        deletedCount: result.deletedCount,
+                    });
+                }
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Erreur lors de la suppression' });
+            } catch (err) {
+                console.error('[DELETE /gallery/event] Erreur:', err);
                 return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ success: false, message: 'Erreur serveur' });
             }
         });

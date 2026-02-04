@@ -13,6 +13,7 @@ services:
         environment:
             NODE_ENV: production
             PORT: 3000
+            DOCKER: 'true'
             # Base de données
             MONGO_URI: ${MONGO_URI}
             # Authentification

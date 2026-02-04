@@ -10,6 +10,7 @@ import { NavbarComponent } from '@app/components/navbar/navbar.component';
 import { NewsComponent } from '@app/components/news/news.component';
 import { PartnerComponent } from '@app/components/partner/partner.component';
 import { SupportComponent } from '@app/components/support/support.component';
+import { VideosComponent } from '@app/components/videos/videos.component';
 import { CommunicationService } from '@app/services/communication/comm/communication.service';
 import { Message } from '@common/interfaces/message';
 import { BehaviorSubject } from 'rxjs';
@@ -26,6 +27,7 @@ import { map } from 'rxjs/operators';
         PartnerComponent,
         GalerieAccessComponent,
         NewsComponent,
+        VideosComponent,
         IntroFMComponent,
         SupportComponent,
         MissionsComponent,

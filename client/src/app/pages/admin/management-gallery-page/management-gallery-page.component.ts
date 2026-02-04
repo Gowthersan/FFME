@@ -116,6 +116,7 @@ export class ManagementGalleryPageComponent extends BaseDestroyableComponent imp
 
     handleFormSubmit(formData: FormData): void {
         this.isLoading = true;
+        this.showModal = false;
 
         if (this.isEditMode && this.photoToEdit?._id) {
             const updatePayload = {
@@ -132,16 +133,20 @@ export class ManagementGalleryPageComponent extends BaseDestroyableComponent imp
                             this.allPhotos[index] = updatedPhoto;
                         }
                         this.groupPhotosByEvent();
-                        this.showModal = false;
                         this.isLoading = false;
                         this.notificationService.success('Photo mise à jour avec succès.');
+                        this.cdr.detectChanges();
                     },
-                    error: () => {
+                    error: (err) => {
+                        console.error('Erreur mise à jour photo:', err);
                         this.isLoading = false;
                         this.notificationService.error('Erreur lors de la mise à jour.');
+                        this.cdr.detectChanges();
                     },
                 });
         } else {
+            this.notificationService.info('Upload en cours, veuillez patienter...');
+
             this.adminCommService.postGalleryPhoto(formData)
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
@@ -152,13 +157,15 @@ export class ManagementGalleryPageComponent extends BaseDestroyableComponent imp
                             const url = this.getImageWithCache(photo.image);
                             this.imageCache.set(photo.image, url);
                         }
-                        this.showModal = false;
                         this.isLoading = false;
-                        this.notificationService.success('Photo(s) ajoutée(s) avec succès.');
+                        this.notificationService.success(`${newPhotos.length} photo(s) ajoutée(s) avec succès.`);
+                        this.cdr.detectChanges();
                     },
-                    error: () => {
+                    error: (err) => {
+                        console.error('Erreur upload photo:', err);
                         this.isLoading = false;
-                        this.notificationService.error('Erreur lors de l\'upload.');
+                        this.notificationService.error(`Erreur lors de l'upload: ${err?.error?.message || err?.message || 'Erreur inconnue'}`);
+                        this.cdr.detectChanges();
                     },
                 });
         }
@@ -166,6 +173,34 @@ export class ManagementGalleryPageComponent extends BaseDestroyableComponent imp
 
     selectEvent(evt: string) {
         this.selectedEvent = evt;
+    }
+
+    deleteEvent(eventName: string): void {
+        const photoCount = this.eventFolders[eventName]?.length || 0;
+        const confirmDelete = confirm(`Supprimer l'evenement "${eventName}" et ses ${photoCount} photo(s) ?`);
+
+        if (!confirmDelete) return;
+
+        this.isLoading = true;
+        this.adminCommService.deleteGalleryEvent(eventName)
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (result) => {
+                    this.notificationService.success(result.message);
+                    // Recharger toute la galerie
+                    this.loadGallery();
+                    // Reinitialiser la selection
+                    if (this.selectedEvent === eventName) {
+                        this.selectedEvent = null;
+                    }
+                },
+                error: (err) => {
+                    console.error('Erreur suppression evenement:', err);
+                    this.isLoading = false;
+                    this.notificationService.error('Erreur lors de la suppression de l\'evenement');
+                    this.cdr.detectChanges();
+                },
+            });
     }
 
     getImageWithCache(fileName: string): string {

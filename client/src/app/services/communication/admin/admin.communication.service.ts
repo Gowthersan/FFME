@@ -6,6 +6,7 @@ import { Donation } from '@common/interfaces/donation';
 import { GalleryPhoto } from '@common/interfaces/gallery-photo';
 import { Member } from '@common/interfaces/member';
 import { News } from '@common/interfaces/news';
+import { Video } from '@common/interfaces/video';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
@@ -121,8 +122,14 @@ export class AdminCommunicationService {
     }
 
     deleteGalleryPhoto(id: string): Observable<any> {
-        console.log(`${this.baseUrl}gallery/${id}`);
         return this.http.delete(`${this.baseUrl}gallery/${id}`, { headers: this.getAuthHeaders() });
+    }
+
+    deleteGalleryEvent(eventName: string): Observable<{ success: boolean; message: string; deletedCount: number }> {
+        return this.http.delete<{ success: boolean; message: string; deletedCount: number }>(
+            `${this.baseUrl}gallery/event/${encodeURIComponent(eventName)}`,
+            { headers: this.getAuthHeaders() },
+        );
     }
 
     // News
@@ -163,6 +170,43 @@ export class AdminCommunicationService {
 
     deleteNews(id: string): Observable<{ message: string }> {
         return this.http.delete<{ message: string }>(`${this.baseUrl}news/${id}`, {
+            headers: this.getAuthHeaders(),
+        });
+    }
+
+    // Video
+    getAllVideos(): Observable<Video[]> {
+        return this.http.get<Video[]>(`${this.baseUrl}video`, {
+            headers: this.getAuthHeaders(),
+        });
+    }
+
+    getVideoById(id: string): Observable<Video> {
+        return this.http.get<Video>(`${this.baseUrl}video/${id}`, {
+            headers: this.getAuthHeaders(),
+        });
+    }
+
+    postVideo(data: { title: string; description: string; videoUrl: string; date: string }): Observable<Video> {
+        return this.http.post<Video>(`${this.baseUrl}video`, data, {
+            headers: this.getAuthHeaders(),
+        });
+    }
+
+    updateVideo(id: string, data: Partial<Video>): Observable<Video> {
+        return this.http.put<Video>(`${this.baseUrl}video/${id}`, data, {
+            headers: this.getAuthHeaders(),
+        });
+    }
+
+    toggleVideoActive(id: string): Observable<Video> {
+        return this.http.patch<Video>(`${this.baseUrl}video/${id}/toggle`, {}, {
+            headers: this.getAuthHeaders(),
+        });
+    }
+
+    deleteVideo(id: string): Observable<{ message: string }> {
+        return this.http.delete<{ message: string }>(`${this.baseUrl}video/${id}`, {
             headers: this.getAuthHeaders(),
         });
     }

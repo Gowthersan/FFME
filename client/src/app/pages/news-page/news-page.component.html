@@ -45,4 +45,38 @@
     </div>
 </section>
 
+<!-- Section Videos -->
+<section class="videos-section container" *ngIf="videosList.length > 0">
+    <div class="videos-header">
+        <h2>NOS VIDEOS</h2>
+        <p>Decouvrez nos actions en images</p>
+    </div>
+
+    <div class="videos-grid">
+        <div class="video-item" *ngFor="let video of videosList" (click)="openVideoModal(video)">
+            <div class="video-item__thumbnail">
+                <img [src]="video.thumbnailUrl" [alt]="video.title" loading="lazy" />
+                <div class="video-item__play">
+                    <i class="fas fa-play"></i>
+                </div>
+                <div class="video-item__platform">
+                    <i [class]="video.platform === 'youtube' ? 'fab fa-youtube' : 'fab fa-vimeo-v'"></i>
+                </div>
+            </div>
+            <div class="video-item__info">
+                <span class="video-item__date">{{ formatDate(video.date) }}</span>
+                <h3 class="video-item__title">{{ truncate(video.title, 50) }}</h3>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Video Modal -->
+<app-video-modal
+    *ngIf="showVideoModal && selectedVideo"
+    [embedUrl]="selectedVideo.embedUrl"
+    [title]="selectedVideo.title"
+    (closed)="closeVideoModal()"
+></app-video-modal>
+
 <app-footer></app-footer>

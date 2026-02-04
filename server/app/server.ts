@@ -2,14 +2,32 @@ import { Application } from '@app/app';
 import * as http from 'http';
 import { AddressInfo } from 'net';
 import { Service } from 'typedi';
-import { MongoConnectionService } from './services/database/mongo.connection.service';
-import { TransactionReconciliationService } from './services/transaction/transaction.reconciliation.service';
 import { ImageCacheService } from './services/cache/image-cache.service';
+import { MongoConnectionService } from './services/database/mongo.connection.service';
 import { SftpPoolService } from './services/sftp/sftp-pool.service';
+import { TransactionReconciliationService } from './services/transaction/transaction.reconciliation.service';
+
+// ========================================
+// CONFIGURATION PORT PAR ENVIRONNEMENT
+// ========================================
+// Local dev (terminal): PORT=3000 (defaut)
+// Docker dev: PORT=3000 (interne), expose sur 5000
+// Docker prod: PORT=3000 (network_mode: host)
+// ========================================
+
+function getDefaultPort(): string {
+    // Si PORT est defini explicitement, l'utiliser
+    if (process.env.PORT) {
+        return process.env.PORT;
+    }
+
+    // Sinon, port 3000 par defaut (local dev et Docker)
+    return '3000';
+}
 
 @Service()
 export class Server {
-    private static readonly appPort: string | number | boolean = Server.normalizePort(process.env.PORT || '3000');
+    private static readonly appPort: string | number | boolean = Server.normalizePort(getDefaultPort());
     // eslint-disable-next-line @typescript-eslint/no-magic-numbers
     private static readonly baseDix: number = 10;
     private server: http.Server;
@@ -98,9 +116,16 @@ export class Server {
      */
     private onListening(): void {
         const addr = this.server.address() as AddressInfo;
-        const bind: string = typeof addr === 'string' ? `pipe ${addr}` : `port ${addr.port}`;
+        const port = addr.port;
+        const isProduction = process.env.NODE_ENV === 'production';
+        const isDocker = process.env.DOCKER === 'true' || !!process.env.DOCKER_CONTAINER;
 
         // eslint-disable-next-line no-console
-        console.log(`Listening on ${bind}`);
+        console.log(`\n🚀 Server Configuration:`);
+        console.log(`   Environment: ${isProduction ? 'PRODUCTION' : 'DEVELOPMENT'}`);
+        console.log(`   Docker: ${isDocker ? 'YES' : 'NO'}`);
+        console.log(`   Port: ${port}`);
+        console.log(`   URL: http://localhost:${port}/api`);
+        console.log(`   Docs: http://localhost:${port}/api/docs\n`);
     }
 }

@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { NewsControllerService } from '@app/services/communication/news/news.communication.service';
 import { News } from '@common/interfaces/news';
 
 @Component({
     selector: 'app-news',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, RouterLink],
     templateUrl: './news.component.html',
     styleUrl: './news.component.scss',
 })
@@ -61,9 +62,5 @@ export class NewsComponent implements OnInit, OnDestroy {
 
     getImageUrl(file: string): string {
         return this.newsService.getImageUrl(file);
-    }
-
-    redirectToFullNews() {
-        window.location.href = '/actualites';
     }
 }

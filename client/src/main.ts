@@ -1,6 +1,7 @@
 import { registerLocaleData } from '@angular/common';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { authInterceptor } from '@app/interceptors/auth.interceptor';
+import { cacheBusterInterceptor } from '@app/interceptors/cache-buster.interceptor';
 import localeFr from '@angular/common/locales/fr';
 import { LOCALE_ID, enableProdMode } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
@@ -87,7 +88,7 @@ const routes: Routes = [
 
 bootstrapApplication(AppComponent, {
     providers: [
-        provideHttpClient(withInterceptors([authInterceptor])),
+        provideHttpClient(withInterceptors([cacheBusterInterceptor, authInterceptor])),
         provideRouter(
             routes,
             withInMemoryScrolling({

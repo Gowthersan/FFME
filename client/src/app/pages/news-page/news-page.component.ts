@@ -4,15 +4,18 @@ import { FooterComponent } from '@app/components/footer/footer.component';
 import { LoadingSpinnerComponent } from '@app/components/loading-spinner/loading-spinner.component';
 import { NavbarComponent } from '@app/components/navbar/navbar.component';
 import { TitleComponent } from '@app/components/title/title.component';
+import { VideoModalComponent } from '@app/components/video-modal/video-modal.component';
 import { NewsControllerService } from '@app/services/communication/news/news.communication.service';
+import { VideoControllerService } from '@app/services/communication/video/video.communication.service';
 import { BaseDestroyableComponent } from '@app/shared/base-destroyable.component';
 import { News } from '@common/interfaces/news';
+import { Video } from '@common/interfaces/video';
 import { takeUntil } from 'rxjs/operators';
 
 @Component({
     selector: 'app-news-page',
     standalone: true,
-    imports: [CommonModule, NavbarComponent, TitleComponent, FooterComponent, LoadingSpinnerComponent],
+    imports: [CommonModule, NavbarComponent, TitleComponent, FooterComponent, LoadingSpinnerComponent, VideoModalComponent],
     templateUrl: './news-page.component.html',
     styleUrl: './news-page.component.scss',
 })
@@ -23,14 +26,25 @@ export class NewsPageComponent extends BaseDestroyableComponent implements OnIni
     pageSize: number = 3;
     expandedNews: Set<string> = new Set();
 
+    // Videos
+    videosList: Video[] = [];
+    showVideoModal = false;
+    selectedVideo: Video | null = null;
+
     constructor(
         private newsService: NewsControllerService,
+        private videoService: VideoControllerService,
         private cdr: ChangeDetectorRef,
     ) {
         super();
     }
 
     ngOnInit(): void {
+        this.loadNews();
+        this.loadVideos();
+    }
+
+    loadNews(): void {
         this.newsService.getAllNews()
             .pipe(takeUntil(this.destroy$))
             .subscribe({
@@ -42,9 +56,33 @@ export class NewsPageComponent extends BaseDestroyableComponent implements OnIni
                 error: () => {
                     this.isLoading = false;
                     this.cdr.detectChanges();
-                    console.error('Erreur chargement actualités');
+                    console.error('Erreur chargement actualites');
                 },
             });
+    }
+
+    loadVideos(): void {
+        this.videoService.getAllVideos()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe({
+                next: (data) => {
+                    this.videosList = data.slice(0, 6);
+                    this.cdr.detectChanges();
+                },
+                error: () => {
+                    console.error('Erreur chargement videos');
+                },
+            });
+    }
+
+    openVideoModal(video: Video): void {
+        this.selectedVideo = video;
+        this.showVideoModal = true;
+    }
+
+    closeVideoModal(): void {
+        this.showVideoModal = false;
+        this.selectedVideo = null;
     }
 
     paginatedNews(): News[] {
